@@ -8,9 +8,8 @@ servers:
 paths:
   /domain/:
     get:
-      operationId: getRentalsDomain
-      summary: |
-        Get a list of available rentals in the area the user is searching using domain.com.au. Say something like "using domain" to search using domain.
+      operationId: getRentalsUsingDomain
+      summary: Get a list of available rentals in the area the user is searching using domain.com.au. Say something like "using domain" to search using domain.
       parameters:
         - in: query
           name: page
@@ -73,9 +72,8 @@ paths:
                     description: The reason the request was rejected.
   /rentdc/{suburbs}:
     get:
-      operationId: getRentalsRent
-      summary: |
-        Get a list of available rentals in the area the user is searching using rent.com.au. Say something like "using rent" to search using rent.
+      operationId: getRentalsUsingRent
+      summary: Get a list of available rentals in the area the user is searching using rent.com.au. Say something like "using rent" to search using rent.
       parameters:
         - in: path
           name: suburbs
@@ -174,9 +172,8 @@ paths:
                     description: The reason the request was rejected
   /realestate/:
     get:
-      operationId: getRentalsRealestate
-      summary: |
-        Get a list of available rentals in the area the user is searching using realestate.com.au. Say something like "using realestate" to search using realestate.
+      operationId: getRentalsUsingRealestate
+      summary: Get a list of available rentals in the area the user is searching using realestate.com.au. Say something like "using realestate" to search using realestate.
       parameters:
         - in: query
           name: channel
