@@ -183,77 +183,67 @@ paths:
           schema:
             type: string
           required: true
-          description: Set to rent or buy depending on whether user wants to search for rental properties or houses to buy
-          default: "rent"
+          description: Set to rent or buy depending on whether user wants to search for rental properties or houses to buy. Default is rent
         - in: query
           name: subdivision
           schema:
             type: string
           required: false
-          description: State user is searching for properties in
-          default: "NSW"
+          description: State user is searching for properties in. Default is NSW
         - in: query
           name: postcode
           schema:
             type: number
           required: false
-          default: 2287
-          description: Postcode user is searching for properties in
+          description: Postcode user is searching for properties in. Default is 2287
         - in: query
           name: searchLocation
           schema:
             type: string
           required: false
-          description: Location user is searching for properties in, formatted as "STATE POSTCODE" e.g. NSW 2287
-          default: "NSW 2287"
+          description: Location user is searching for properties in, formatted as "STATE POSTCODE". Default is NSW 2287
         - in: query
           name: pageSize
           schema:
             type: number
           required: false
-          description: How many listings per page user is requesting
-          default: 20
+          description: How many listings per page user is requesting. Default is 20
         - in: query
           name: page
           schema:
             type: number
           required: false
-          description: What page number user is requesting
-          default: 1
+          description: What page number user is requesting. Default is 1
         - in: query
           name: propertyType
           schema:
             type: string
           required: false
-          description: A type of property the user is looking for
-          default: "house"
+          description: A type of property the user is looking for. Default is house
         - in: query
           name: minimumPrice
           schema:
             type: number
           required: false
-          description: Minimum price of the property
-          default: 200
+          description: Minimum price of the property. Default is 200
         - in: query
           name: maximumPrice
           schema:
             type: number
           required: false
-          description: Maximum price of the property
-          default: 600
+          description: Maximum price of the property. Default is 600
         - in: query
           name: surroundingSuburbs
           schema:
             type: boolean
           required: false
-          description: Whether to search for surrounding suburbs
-          default: true
+          description: Whether to search for surrounding suburbs. Default is true
         - in: query
           name: replaceProjectWithFirstChild
           schema:
             type: boolean
           required: false
-          default: false
+          description: Default is false
         - in: query
           name: images
           schema:
