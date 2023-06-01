@@ -178,70 +178,82 @@ paths:
       summary: |
         Get a list of available rentals in the area the user is searching using realestate.com.au.
       parameters:
-        - name: query
-          in: query
+        - in: query
+          name: channel
+          schema:
+            type: string
           required: true
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  channel:
-                    type: string
-                    description: Set to rent or buy depending on whether user wants to search for rental properties or houses to buy
-                    default: rent
-                  localities:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        subdivision:
-                          type: string
-                          description: State user is searching for properties in
-                          default: NSW
-                        postcode:
-                          type: string
-                          description: Postcode user is searching for properties in
-                          default: 2287
-                        searchLocation:
-                          type: string
-                          description: Location user is searching for properties in, formatted as "STATE POSTCODE" e.g. NSW 2287
-                          default: NSW 2287
-                  pageSize:
-                    type: string
-                    description: How many listings per page user is requesting
-                    default: 20
-                  page:
-                    type: string
-                    description: What page number user is requesting
-                    default: 1
-                  filters:
-                    type: object
-                    properties:
-                      propertyTypes:
-                        type: array
-                        items:
-                          type: string
-                          description: A type of property the user is looking for
-                          default: house
-                      priceRange:
-                        type: object
-                        properties:
-                          minimum:
-                            type: string
-                            description: Minimum price of the property
-                            default: 200
-                          maximum:
-                            type: string
-                            description: Maximum price of the property
-                            default: 600
-                      surroundingSuburbs:
-                        type: boolean
-                        description: Whether to search for surrounding suburbs
-                        default: true
-                      replaceProjectWithFirstChild:
-                        type: boolean
-                        default: false
+          description: Set to rent or buy depending on whether user wants to search for rental properties or houses to buy
+          default: "rent"
+        - in: query
+          name: subdivision
+          schema:
+            type: string
+          required: false
+          description: State user is searching for properties in
+          default: "NSW"
+        - in: query
+          name: postcode
+          schema:
+            type: number
+          required: false
+          default: 2287
+          description: Postcode user is searching for properties in
+        - in: query
+          name: searchLocation
+          schema:
+            type: string
+          required: false
+          description: Location user is searching for properties in, formatted as "STATE POSTCODE" e.g. NSW 2287
+          default: "NSW 2287"
+        - in: query
+          name: pageSize
+          schema:
+            type: number
+          required: false
+          description: How many listings per page user is requesting
+          default: 20
+        - in: query
+          name: page
+          schema:
+            type: number
+          required: false
+          description: What page number user is requesting
+          default: 1
+        - in: query
+          name: propertyType
+          schema:
+            type: string
+          required: false
+          description: A type of property the user is looking for
+          default: "house"
+        - in: query
+          name: minimumPrice
+          schema:
+            type: number
+          required: false
+          description: Minimum price of the property
+          default: 200
+        - in: query
+          name: maximumPrice
+          schema:
+            type: number
+          required: false
+          description: Maximum price of the property
+          default: 600
+        - in: query
+          name: surroundingSuburbs
+          schema:
+            type: boolean
+          required: false
+          description: Whether to search for surrounding suburbs
+          default: true
+        - in: query
+          name: replaceProjectWithFirstChild
+          schema:
+            type: boolean
+          required: false
+          default: false
         - in: query
           name: images
           schema:
