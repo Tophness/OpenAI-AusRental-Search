@@ -4,7 +4,7 @@ info:
   description: A plugin that allows the user to search for an ideal property to rent using ChatGPT.
   version: 'v1'
 servers:
-  - url: https://openai-domain-search.onrender.com
+  - url: https://openai-ausrental-search.onrender.com
 paths:
   /domain/:
     get:

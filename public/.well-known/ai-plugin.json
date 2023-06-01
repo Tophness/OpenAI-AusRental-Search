@@ -9,10 +9,10 @@
     },
     "api": {
         "type": "openapi",
-        "url": "https://openai-domain-search.onrender.com/openapi.yaml",
+        "url": "https://openai-ausrental-search.onrender.com/openapi.yaml",
         "is_user_authenticated": false
     },
-    "logo_url": "https://openai-domain-search.onrender.com/logo.png",
-    "contact_email": "support@openai-domain-search.onrender.com",
-    "legal_info_url": "https://openai-domain-search.onrender.com/legal"
+    "logo_url": "https://openai-ausrental-search.onrender.com/logo.png",
+    "contact_email": "support@openai-ausrental-search.onrender.com",
+    "legal_info_url": "https://openai-ausrental-search.onrender.com/legal"
 }
