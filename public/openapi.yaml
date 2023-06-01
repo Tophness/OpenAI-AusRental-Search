@@ -185,6 +185,12 @@ paths:
           required: true
           description: Set to rent or buy depending on whether user wants to search for rental properties or houses to buy. Default is rent
         - in: query
+          name: propertyType
+          schema:
+            type: string
+          required: true
+          description: A type of property the user is looking for. Default is house
+        - in: query
           name: subdivision
           schema:
             type: string
@@ -197,12 +203,6 @@ paths:
           required: false
           description: Postcode user is searching for properties in. Default is 2287
         - in: query
-          name: searchLocation
-          schema:
-            type: string
-          required: false
-          description: Location user is searching for properties in, formatted as "STATE POSTCODE". Default is NSW 2287
-        - in: query
           name: pageSize
           schema:
             type: number
@@ -214,12 +214,6 @@ paths:
             type: number
           required: false
           description: What page number user is requesting. Default is 1
-        - in: query
-          name: propertyType
-          schema:
-            type: string
-          required: false
-          description: A type of property the user is looking for. Default is house
         - in: query
           name: minimumPrice
           schema:

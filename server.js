@@ -10,14 +10,13 @@ function extractUrlParameters(urlString) {
   return params;
 }
 
-function constructObject(channel, subdivision, postcode, searchLocation, pageSize, page, propertyType, minimumPrice, maximumPrice, surroundingSuburbs, replaceProjectWithFirstChild) {
+function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, surroundingSuburbs, replaceProjectWithFirstChild) {
   const obj = {
     channel: channel,
     localities: [
       {
         subdivision: subdivision,
-        postcode: postcode,
-        searchLocation: searchLocation
+        postcode: postcode
       }
     ],
     pageSize: pageSize,
@@ -241,7 +240,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
         params.channel,
         params.subdivision,
         params.postcode,
-        params.searchLocation,
         params.pageSize,
         params.page,
         params.propertyType,
