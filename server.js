@@ -125,6 +125,10 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
       proxyReqOpts.headers["Accept"] = "text/html";
     }
     proxyReqOpts.headers["Cookie"] = "";
+    proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
+    proxyReqOpts.headers["Access-Control-Allow-Methods"] = "*";
+    proxyReqOpts.headers["Access-Control-Allow-Headers"] = "*";
+    proxyReqOpts.headers["Access-Control-Allow-Credentials"] = "true";
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
