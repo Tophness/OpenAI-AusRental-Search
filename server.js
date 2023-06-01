@@ -143,7 +143,7 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
 app.use('/domain', proxy('https://www.domain.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
-      srcReq.url = srcReq.url.replace('/domain', '/rent');
+      srcReq.url = '/rent' + srcReq.url;
       proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
       proxyReqOpts.headers["accept"] = "application/json";
     }
@@ -230,7 +230,7 @@ app.use('/domain', proxy('https://www.domain.com.au', {
 app.use('/realestate', proxy('https://services.realestate.com.au/services/listings/search', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
-      srcReq.url = srcReq.url.replace('/?', '/services/listings/search?')
+      srcReq.url = '/services/listings/search' + srcReq.url;
     }
     proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
     proxyReqOpts.headers["Access-Control-Allow-Methods"] = "*";
