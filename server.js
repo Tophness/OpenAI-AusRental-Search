@@ -262,10 +262,10 @@ app.use('/domain', proxy('https://www.domain.com.au', {
 app.use('/realestate', proxy('https://services.realestate.com.au/services/listings/search', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
-      const params = extractUrlParameters(srcReq.url);
+      const params = extractUrlParameters(srcReq.url.replace('/?',''));
       console.log(params);
       const paramObject = constructObject(
-        params.channel.replace('/?',''),
+        params.channel,
         params.subdivision,
         params.postcode,
         params.searchLocation,
