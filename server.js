@@ -122,7 +122,7 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
     res.set("link","");
     res.set("etag","");
 
-    if (req.url.indexOf('/rentdc') !== -1) {
+    if (req.url.indexOf('/properties') !== -1) {
       res.set("content-type", "application/json; charset=utf-8");
       res.set("accept", "application/json");
       const imgParam = req.url.match('[?&]images=([^&]+)');
@@ -154,7 +154,7 @@ app.use('/domain', proxy('https://www.domain.com.au', {
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
-    if (req.url.indexOf('/domain') !== -1) {
+    if (req.url.indexOf('/rent') !== -1) {
       const data = JSON.parse(proxyResData.toString('utf8'));
       if (data.props && data.props.listingsMap) {
         let trimmedData = data.props.listingsMap;
