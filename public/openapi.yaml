@@ -46,7 +46,7 @@ paths:
           schema:
             type: string
           required: false
-          description: Features to search for, separated by commas. Options are petsallowed, gas, builtinwardrobes, gardencourtyard, internallaundry, furnished, balconydeck, study, and dishwasher
+          description: Features to search for, separated by commas. Options are petsallowed, gas, builtinwardrobes, gardencourtyard, internallaundry, furnished, balconydeck, study, swimmingpool, airconditioning, secureparking, ensuite, heating and dishwasher
         - in: query
           name: images
           schema:
