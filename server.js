@@ -276,6 +276,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
         params.surroundingSuburbs,
         params.replaceProjectWithFirstChild
       );
+      console.log('/services/listings/search?query=' + JSON.stringify(paramObject));
       srcReq.url = '/services/listings/search?query=' + JSON.stringify(paramObject);
     }
     proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
