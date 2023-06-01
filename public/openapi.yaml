@@ -82,7 +82,7 @@ paths:
           schema:
             type: string
           required: true
-          description: Suburbs to search for rental properties, formatted as suburb+postcode, separated by commas. e.g. fairfield+2165,penrith+2750
+          description: Suburbs to search for rental properties, formatted as "suburb postcode", separated by commas. e.g. fairfield 2165,penrith 2750
         - in: query
           name: surrounding_suburbs
           schema:

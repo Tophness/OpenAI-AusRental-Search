@@ -119,10 +119,8 @@ app.use(express.static('public'));
 
 app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
-    if (srcReq.url.indexOf('?') !== -1) {
-      srcReq.url = '/properties' + srcReq.url;
-      proxyReqOpts.headers["Accept"] = "text/html";
-    }
+    srcReq.url = '/properties' + srcReq.url;
+    proxyReqOpts.headers["Accept"] = "text/html";
     proxyReqOpts.headers["Cookie"] = "";
     return proxyReqOpts;
   },
