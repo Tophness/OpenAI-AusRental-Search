@@ -2,6 +2,7 @@ const express = require('express');
 const proxy = require('express-http-proxy');
 const cheerio = require('cheerio');
 const {URLSearchParams} = require('url');
+const cors = require("cors");
 
 function extractUrlParameters(urlString) {
   const parsedUrl = new URLSearchParams(urlString);
@@ -114,6 +115,7 @@ function extractListingDetails(html) {
 }
 
 const app = express();
+app.use(cors());
 app.use(express.static('public'));
 
 app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
@@ -123,37 +125,9 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
       proxyReqOpts.headers["Accept"] = "text/html";
     }
     proxyReqOpts.headers["Cookie"] = "";
-    proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Methods"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Headers"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Credentials"] = "true";
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
-    res.set("Access-Control-Allow-Origin","*");
-    res.set("Access-Control-Allow-Methods","*");
-    res.set("Access-Control-Allow-Headers","*");
-    res.set("Access-Control-Allow-Credentials","true");
-    res.set("x-amz-apigw-id","");
-    res.set("x-amzn-remapped-connection","");
-    res.set("x-amz-apigw-id","");
-    res.set("x-amzn-remapped-date","");
-    res.set("x-amzn-remapped-server","");
-    res.set("x-amzn-requestid","");
-    res.set("x-amz-apigw-id","");
-    res.set("x-content-type-options","");
-    res.set("x-frame-options","");
-    res.set("x-amz-apigw-id","");
-    res.set("x-permitted-cross-domain-policies","*");
-    res.set("x-amz-apigw-id","");
-    res.set("x-powered-by","");
-    res.set("x-render-origin-server","");
-    res.set("x-request-id","");
-    res.set("x-xss-protection","");
-    res.set("referrer-policy","");
-    res.set("link","");
-    res.set("etag","");
-
     if (req.url.indexOf('/properties') !== -1) {
       res.set("content-type", "application/json; charset=utf-8");
       res.set("accept", "application/json");
@@ -179,10 +153,6 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
       proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
       proxyReqOpts.headers["accept"] = "application/json";
     }
-    proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Methods"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Headers"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Credentials"] = "true";
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
@@ -278,10 +248,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
       );
       srcReq.url = '/services/listings/search?query=' + JSON.stringify(paramObject);
     }
-    proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Methods"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Headers"] = "*";
-    proxyReqOpts.headers["Access-Control-Allow-Credentials"] = "true";
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
