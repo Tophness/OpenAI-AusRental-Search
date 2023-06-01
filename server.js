@@ -86,6 +86,7 @@ app.use(express.static('public'));
 
 app.use('/rentdc', proxy('https://www.rent.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+    console.log(srcReq.url);
     if (srcReq.url.indexOf('/rentdc') !== -1) {
       srcReq.url = srcReq.url.replace('/rentdc', '/properties')
       proxyReqOpts.headers["Accept"] = "text/html";
@@ -98,7 +99,6 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
-    console.log(req.url);
     res.set("Access-Control-Allow-Origin","*");
     res.set("Access-Control-Allow-Methods","*");
     res.set("Access-Control-Allow-Headers","*");
@@ -143,6 +143,7 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
 
 app.use('/domain', proxy('https://www.domain.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+    console.log(srcReq.url);
     if (srcReq.url.indexOf('/domain') !== -1) {
       srcReq.url = srcReq.url.replace('/domain', '/rent');
       proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
@@ -155,7 +156,6 @@ app.use('/domain', proxy('https://www.domain.com.au', {
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
-    console.log(req.url);
     if (req.url.indexOf('/rent') !== -1) {
       const data = JSON.parse(proxyResData.toString('utf8'));
       if (data.props && data.props.listingsMap) {
