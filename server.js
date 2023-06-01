@@ -263,6 +263,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
       const params = extractUrlParameters(srcReq.url)
+      console.log(JSON.stringify(params));
       const paramObject = constructObject(
         params.channel,
         params.subdivision,
@@ -276,6 +277,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
         params.surroundingSuburbs,
         params.replaceProjectWithFirstChild
       );
+      console.log(JSON.stringify(paramObject));
       srcReq.url = '/services/listings/search?' + JSON.stringify(paramObject);
     }
     proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
