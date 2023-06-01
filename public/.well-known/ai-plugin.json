@@ -1,9 +1,9 @@
 {
     "schema_version": "v1",
-    "name_for_human": "Aus Rental Plugin",
+    "name_for_human": "Australian Rental Finder",
     "name_for_model": "rent",
     "description_for_human": "Plugin for finding properties to rent.",
-    "description_for_model": "Plugin for finding properties to rent.",
+    "description_for_model": "Plugin for finding properties to rent. Say using domain, using realestate or using rent to use different rent sites.",
     "auth": {
         "type": "none"
     },
