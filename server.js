@@ -98,6 +98,7 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
+    console.log(req.url);
     res.set("Access-Control-Allow-Origin","*");
     res.set("Access-Control-Allow-Methods","*");
     res.set("Access-Control-Allow-Headers","*");
@@ -154,6 +155,7 @@ app.use('/domain', proxy('https://www.domain.com.au', {
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
+    console.log(req.url);
     if (req.url.indexOf('/rent') !== -1) {
       const data = JSON.parse(proxyResData.toString('utf8'));
       if (data.props && data.props.listingsMap) {
