@@ -10,7 +10,7 @@ paths:
     get:
       operationId: getRentalsDomain
       summary: |
-        Get a list of available rentals in the area the user is searching using domain.com.au.
+        Get a list of available rentals in the area the user is searching using domain.com.au. Say something like "using domain" to search using domain.
       parameters:
         - in: query
           name: page
@@ -75,7 +75,7 @@ paths:
     get:
       operationId: getRentalsRent
       summary: |
-        Get a list of available rentals in the area the user is searching using rent.com.au.
+        Get a list of available rentals in the area the user is searching using rent.com.au. Say something like "using rent" to search using rent.
       parameters:
         - in: path
           name: suburbs
@@ -176,7 +176,7 @@ paths:
     get:
       operationId: getRentalsRealestate
       summary: |
-        Get a list of available rentals in the area the user is searching using realestate.com.au.
+        Get a list of available rentals in the area the user is searching using realestate.com.au. Say something like "using realestate" to search using realestate.
       parameters:
         - in: query
           name: channel
