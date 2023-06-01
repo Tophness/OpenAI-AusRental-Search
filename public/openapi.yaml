@@ -172,7 +172,7 @@ paths:
                   message:
                     type: string
                     description: The reason the request was rejected
-  /realestate:
+  /realestate/:
     get:
       operationId: getRentalsRealestate
       summary: |
