@@ -151,6 +151,8 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url == '/'){
       srcReq.url = '/rent?';
+      proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
+      proxyReqOpts.headers["accept"] = "application/json";
     }
     if (srcReq.url.indexOf('/?') !== -1) {
       srcReq.url = '/rent' + decodeURIComponent(srcReq.url);
