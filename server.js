@@ -265,7 +265,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
       const params = extractUrlParameters(srcReq.url);
       console.log(params);
       const paramObject = constructObject(
-        params.channel,
+        params.channel.replace('/?',''),
         params.subdivision,
         params.postcode,
         params.searchLocation,
