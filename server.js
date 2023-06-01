@@ -81,6 +81,8 @@ function extractListingDetails(html) {
   return returnJSON;
 }
 
+const app = express();
+
 app.use('/rentdc', proxy('https://www.rent.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/rentdc') !== -1) {
@@ -139,7 +141,6 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
   }
 }));
 
-const app = express();
 app.use(express.static('public'));
 app.use('/domain', proxy('https://www.domain.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
