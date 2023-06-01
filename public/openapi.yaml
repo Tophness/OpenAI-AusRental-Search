@@ -383,7 +383,7 @@ components:
         pageSize:
           type: number
           description: The number of listings per page
-        results:
+        listings:
           type: array
           items:
             type: object

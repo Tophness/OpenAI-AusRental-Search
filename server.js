@@ -247,7 +247,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
           totalListings: data.totalResultsCount,
           currentPage: data.resolvedQuery.page,
           pageSize: data.resolvedQuery.pageSize,
-          results: null
+          listings: null
         };
         for (const id in trimmedData) {
          if (trimmedData.hasOwnProperty(id)) {
@@ -308,7 +308,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
               }
             }
         }
-        returnJSON.results = trimmedData;
+        returnJSON.listings = trimmedData;
         return JSON.stringify(returnJSON);
       }
       else{
