@@ -1,0 +1,494 @@
+openapi: 3.0.1
+info:
+  title: Australian Rent Search Plugin
+  description: A plugin that allows the user to search for an ideal property to rent using ChatGPT.
+  version: 'v1'
+servers:
+  - url: https://openai-domain-search.onrender.com
+paths:
+  /domain/:
+    get:
+      operationId: getRentalsDomain
+      summary: |
+        Get a list of available rentals in the area the user is searching using domain.com.au.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page of results to request. Starts at 1.
+        - in: query
+          name: suburb
+          schema:
+            type: string
+          required: true
+          description: Suburbs to search for rental properties, formatted as suburb-state-postcode, separated by commas. e.g. chatswood-nsw-2067,gordon-nsw-2072
+        - in: query
+          name: bedrooms
+          schema:
+            type: string
+          required: true
+          description: Number of bedrooms user is requesting. If user wants a minimum number of rooms, format it as a single number. e.g. 2. If user wants a range, format it as min-max. e.g. 2-4. "any" can be requested too. e.g. 3-any
+        - in: query
+          name: price
+          schema:
+            type: string
+          required: false
+          description: Price range for an apartment. If user wants a maximum price, format it as an integer. e.g. 500. If user wants a range, format it as min-max. e.g. 200-500
+        - in: query
+          name: excludedeposittaken
+          schema:
+            type: integer
+          required: false
+          description: Exclude rental properties with deposits taken
+        - in: query
+          name: features
+          schema:
+            type: string
+          required: false
+          description: Set to "petsallowed" if the user wants a pet friendly apartment
+        - in: query
+          name: images
+          schema:
+            type: number
+          required: false
+          description: Set to 0 to disable image results or any other number to set how many images per result to return. Default value is 2
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getRentalsResponseDomain'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: The reason the request was rejected.
+  /rentdc/{suburbs}:
+    get:
+      operationId: getRentalsRent
+      summary: |
+        Get a list of available rentals in the area the user is searching using rent.com.au.
+      parameters:
+        - in: path
+          name: suburbs
+          schema:
+            type: string
+          required: true
+          description: Suburbs to search for rental properties, formatted as suburb+postcode, separated by commas. e.g. fairfield+2165,penrith+2750
+        - in: query
+          name: surrounding_suburbs
+          schema:
+            type: string
+          required: false
+          description: Set to 1 to include surrounding suburbs, or 0 do only use the exact suburbs entered
+        - in: query
+          name: rent_low
+          schema:
+            type: integer
+          required: false
+          description: Minimum price range for an apartment.
+        - in: query
+          name: rent_high
+          schema:
+            type: integer
+          required: false
+          description: Maximum price range for an apartment.
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page of results to request. Starts at 1
+        - in: query
+          name: bedrooms
+          schema:
+            type: integer
+          required: false
+          description: Minimum number of bedrooms user is requesting
+        - in: query
+          name: bathrooms
+          schema:
+            type: integer
+          required: false
+          description: Minimum number of bathrooms user is requesting
+        - in: query
+          name: car_spaces
+          schema:
+            type: integer
+          required: false
+          description: Minimum number of car spaces user is requesting
+        - in: query
+          name: walk_category
+          schema:
+            type: integer
+          required: false
+          description: Walk category user is requesting. 1 = Walker's Paradise, 2 = Very Walkable, 3 = Somewhat Walkable, 4 = Car Dependant
+        - in: query
+          name: nbn_category
+          schema:
+            type: integer
+          required: false
+          description: Whether NBN internet is required. 0 = Not Required, 1 = Required
+        - in: query
+          name: long_term_lease
+          schema:
+            type: integer
+          required: false
+          description: Whether user requires long term lease. 0 = Not Required, 1 = Required
+        - in: query
+          name: build_to_rent
+          schema:
+            type: integer
+          required: false
+          description: Whether user requires build to rent option. 0 = Not Required, 1 = Required
+        - in: query
+          name: images
+          schema:
+            type: integer
+          required: false
+          description: Set to 0 to disable image results or 1 to include image results. Default value is 1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getRentalsResponseRent'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: The reason the request was rejected
+  /realestate:
+    get:
+      operationId: getRentalsRealestate
+      summary: |
+        Get a list of available rentals in the area the user is searching using realestate.com.au.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  channel:
+                    type: string
+                    description: Set to rent or buy depending on whether user wants to search for rental properties or houses to buy
+                    default: rent
+                  localities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        subdivision:
+                          type: string
+                          description: State user is searching for properties in
+                          default: NSW
+                        postcode:
+                          type: string
+                          description: Postcode user is searching for properties in
+                          default: 2287
+                        searchLocation:
+                          type: string
+                          description: Location user is searching for properties in, formatted as "STATE POSTCODE" e.g. NSW 2287
+                          default: NSW 2287
+                  pageSize:
+                    type: string
+                    description: How many listings per page user is requesting
+                    default: 20
+                  page:
+                    type: string
+                    description: What page number user is requesting
+                    default: 1
+                  filters:
+                    type: object
+                    properties:
+                      propertyTypes:
+                        type: array
+                        items:
+                          type: string
+                          description: A type of property the user is looking for
+                          default: house
+                      priceRange:
+                        type: object
+                        properties:
+                          minimum:
+                            type: string
+                            description: Minimum price of the property
+                            default: 200
+                          maximum:
+                            type: string
+                            description: Maximum price of the property
+                            default: 600
+                      surroundingSuburbs:
+                        type: boolean
+                        description: Whether to search for surrounding suburbs
+                        default: true
+                      replaceProjectWithFirstChild:
+                        type: boolean
+                        default: false
+        - in: query
+          name: images
+          schema:
+            type: integer
+          required: false
+          description: Set to 0 to disable image results or any other number to set how many images per result to return. Default value is 2
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getRentalsResponseRealestate'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: The reason the request was rejected
+components:
+  schemas:
+    getRentalsResponseDomain:
+      type: object
+      properties:
+        totalPages:
+          type: number
+          description: Total number of pages to use for pagination.
+        page:
+          type: number
+          description: Current page number to use for pagination.
+        resultsPerPage:
+          type: number
+          description: Number of current listing results per page to use for pagination.
+        totalResults:
+          type: number
+          description: Total number of listing results to use for pagination.
+        listings:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              listingModel:
+                type: object
+                properties:
+                  address:
+                    type: object
+                    properties:
+                      city:
+                        type: string
+                      state:
+                        type: string
+                      street:
+                        type: string
+                      postcode:
+                        type: string
+                      suburb:
+                        type: string
+                  images:
+                    type: array
+                    items:
+                      type: string
+                    description: Image urls to be displayed as images in the chat.
+                  features:
+                    type: object
+                    properties:
+                      baths:
+                        type: number
+                      beds:
+                        type: number
+                      landsize:
+                        type: number
+                      landUnit:
+                        type: string
+                      propertyTypeFormatted:
+                        type: string
+                  url:
+                    type: string
+                    description: URL to the property listing. Start with the root server www.domain.com.au followed by this url.
+                  price:
+                    type: string
+                  inspection:
+                    type: object
+                    properties:
+                      openTime:
+                        type: string
+                      closeTime:
+                        type: string
+    getRentalsResponseRent:
+      type: object
+      properties:
+        totalListings:
+          type: number
+          description: Total number of property listings. You can also use this to work out how many more pages there are to navigate through by dividing the totalListings number by 20 (the number of listings per page)
+        nextPageNum:
+          type: number
+          description: The next page number to navigate to
+        currentPageNum:
+          type: number
+          description: The current page number
+        listings:
+          type: array
+          items:
+            type: object
+            properties:
+              address:
+                type: string
+              imageUrl:
+                type: string
+                description: URL of the image to be displayed in chat
+              price:
+                type: string
+              features:
+                type: array
+                items:
+                  type: string
+                description: List of features the property has
+              propType:
+                type: string
+                description: Property type
+              description:
+                type: string
+                description: Description of the property listing
+              url:
+                type: string
+                description: URL of the property listing
+    getRentalsResponseRealestate:
+      type: object
+      properties:
+        totalListings:
+          type: number
+          description: Total number of property listings. You can also use this to work out how many more pages there are to navigate through by dividing the totalListings number by the number of listings per page
+        currentPage:
+          type: number
+          description: The current page number
+        pageSize:
+          type: number
+          description: The number of listings per page
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              prettyUrl:
+                type: string
+              description:
+                type: string
+              title:
+                type: string
+              features:
+                type: object
+                properties:
+                  general:
+                    type: object
+                    properties:
+                      bedrooms:
+                        type: number
+                      bathrooms:
+                        type: number
+                      parkingSpaces:
+                        type: number
+              price:
+                type: object
+                properties:
+                  display:
+                    type: string
+              propertyType:
+                type: string
+              address:
+                type: object
+                properties:
+                  streetAddress:
+                    type: string
+                  postcode:
+                    type: string
+                  suburb:
+                    type: string
+                  postCode:
+                    type: string
+                  location:
+                    type: object
+                    properties:
+                      latitude:
+                        type: number
+                      longitude:
+                        type: number
+                  state:
+                    type: string
+              propertyFeatures:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    features:
+                      type: array
+                      items:
+                        type: string
+                    section:
+                      type: string
+                    label:
+                      type: string
+              bond:
+                type: object
+                properties:
+                  display:
+                    type: string
+                  value:
+                    type: number
+              dateAvailable:
+                type: object
+                properties:
+                  date:
+                    type: string
+              inspectionsAndAuctions:
+                type: array
+                items:
+                  type: object
+              generalFeatures:
+                type: object
+                properties:
+                  bedrooms:
+                    type: object
+                    properties:
+                      label:
+                        type: string
+                      type:
+                        type: string
+                      value:
+                        type: number
+                  bathrooms:
+                    type: object
+                    properties:
+                      label:
+                        type: string
+                      type:
+                        type: string
+                      value:
+                        type: number
+                  parkingSpaces:
+                    type: object
+                    properties:
+                      label:
+                        type: string
+                      type:
+                        type: string
+                      value:
+                        type: number

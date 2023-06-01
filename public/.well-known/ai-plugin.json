@@ -1,0 +1,18 @@
+{
+    "schema_version": "v1",
+    "name_for_human": "Aus Rental Plugin",
+    "name_for_model": "rent",
+    "description_for_human": "Plugin for finding properties to rent.",
+    "description_for_model": "Plugin for finding properties to rent.",
+    "auth": {
+        "type": "none"
+    },
+    "api": {
+        "type": "openapi",
+        "url": "https://openai-domain-search.onrender.com/openapi.yaml",
+        "is_user_authenticated": false
+    },
+    "logo_url": "https://openai-domain-search.onrender.com/logo.png",
+    "contact_email": "support@openai-domain-search.onrender.com",
+    "legal_info_url": "https://openai-domain-search.onrender.com/legal"
+}
