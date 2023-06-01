@@ -175,7 +175,7 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
 app.use('/domain', proxy('https://www.domain.com.au/rent', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
-      srcReq.url = '/rent' + srcReq.url;
+      srcReq.url = '/rent' + decodeURIComponent(srcReq.url);
       proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
       proxyReqOpts.headers["accept"] = "application/json";
     }
@@ -187,8 +187,6 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
     if (req.url.indexOf('/rent') !== -1) {
-      console.log(req.url);
-      console.log(proxyResData.toString('utf8'));
       const data = JSON.parse(proxyResData.toString('utf8'));
       if (data.props && data.props.listingsMap) {
         let trimmedData = data.props.listingsMap;
