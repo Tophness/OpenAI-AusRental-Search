@@ -88,8 +88,6 @@ app.use('/rentdc', proxy('https://www.rent.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/rentdc') !== -1) {
       srcReq.url = srcReq.url.replace('/rentdc', '/properties')
-    }
-    if (srcReq.url.indexOf('/properties') !== -1) {
       proxyReqOpts.headers["Accept"] = "text/html";
     }
     proxyReqOpts.headers["Cookie"] = "";
@@ -146,10 +144,8 @@ app.use('/domain', proxy('https://www.domain.com.au', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/domain') !== -1) {
       srcReq.url = srcReq.url.replace('/domain', '/rent');
-    }
-    if (srcReq.url.indexOf('/domain') !== -1 || srcReq.url.indexOf('/rent') !== -1) {
-       proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
-       proxyReqOpts.headers["accept"] = "application/json";
+      proxyReqOpts.headers["content-type"] = "application/json; charset=utf-8";
+      proxyReqOpts.headers["accept"] = "application/json";
     }
     proxyReqOpts.headers["Access-Control-Allow-Origin"] = "*";
     proxyReqOpts.headers["Access-Control-Allow-Methods"] = "*";
