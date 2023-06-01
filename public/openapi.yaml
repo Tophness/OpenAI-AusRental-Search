@@ -46,7 +46,7 @@ paths:
           schema:
             type: string
           required: false
-          description: Set to "petsallowed" if the user wants a pet friendly apartment
+          description: Features to search for, separated by commas. Options are petsallowed, gas, builtinwardrobes, gardencourtyard, internallaundry, furnished, balconydeck, study, and dishwasher
         - in: query
           name: images
           schema:
@@ -186,7 +186,7 @@ paths:
           schema:
             type: string
           required: true
-          description: A type of property the user is looking for. Default is house
+          description: A type of property the user is looking for. Options are house, apartment, townhouse, villa, unit or all. Default is all
         - in: query
           name: subdivision
           schema:
