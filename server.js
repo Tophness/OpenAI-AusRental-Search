@@ -1,11 +1,11 @@
 const express = require('express');
 const proxy = require('express-http-proxy');
 const cheerio = require('cheerio');
-const url = require('url');
+const {URLSearchParams} = require('url');
 
 function extractUrlParameters(urlString) {
-  const parsedUrl = new URL(urlString);
-  const params = Object.fromEntries(parsedUrl.searchParams.entries());
+  const parsedUrl = new URLSearchParams(urlString);
+  const params = Object.fromEntries(parsedUrl.entries());
   return params;
 }
 
