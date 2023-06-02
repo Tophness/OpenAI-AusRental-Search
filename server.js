@@ -305,20 +305,15 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                 const images = trimmedData[key].images;
                 if (Array.isArray(images) && images.length > imgParam) {
                   trimmedData[key].images = images.slice(0, imgParam);
-                }
-                for (let imgKey in trimmedData[key].images) {
-                  if (trimmedData[key].images.hasOwnProperty(imgKey)) {
-					if(trimmedData[key].images[imgKey].url){
-					  const serveradd = trimmedData[key].images[imgKey].server;
-                      trimmedData[key].images[imgKey].url = serveradd + trimmedData[key].images[imgKey].url;
-					}
-					if(trimmedData[key].images[imgKey].server){
-					  delete trimmedData[key].images[imgKey].server;
-					}
-					if(trimmedData[key].images[imgKey].name){
-                      delete trimmedData[key].images[imgKey].name;
-					}
+				  let newimages = [];
+                  for (let imgKey in trimmedData[key].images) {
+                    if (trimmedData[key].images.hasOwnProperty(imgKey)) {
+					  if(trimmedData[key].images[imgKey].uri){
+                        newimages.push(trimmedData[key].images[imgKey].server + trimmedData[key].images[imgKey].uri);
+					  }
+                    }
                   }
+				  trimmedData[key].images = newimages;
                 }
 			  }
             }
