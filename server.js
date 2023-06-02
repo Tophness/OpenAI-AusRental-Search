@@ -291,6 +291,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
           pageSize: data.resolvedQuery.pageSize,
           listings: null
         };
+		let markForDeletion = [];
         for (const id in trimmedData) {
          if (trimmedData.hasOwnProperty(id)) {
            delete trimmedData[id].standard;
@@ -354,7 +355,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                  trimmedData[id].price = trimmedData[id].price.display;
 			   }
 			   else{
-                 delete trimmedData[id];
+                 markForDeletion.push(id);
 			   }
 		     }
 		   }
@@ -420,6 +421,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
               }
             }
         }
+        for (let id in markForDeletion) {
+			trimmedData.splice(id, 1);
+		}
         returnJSON.listings = trimmedData;
         return JSON.stringify(returnJSON);
       }
