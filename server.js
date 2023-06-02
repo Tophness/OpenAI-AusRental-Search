@@ -306,7 +306,13 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                 if (Array.isArray(images) && images.length > imgParam) {
                   trimmedData[key].images = images.slice(0, imgParam);
                 }
-              }
+                for (let imgKey in images) {
+                  if (trimmedData.hasOwnProperty(imgKey)) {
+                    trimmedData[key].images[imgKey].url = trimmedData[key].images[imgKey].server + trimmedData[key].images[imgKey].url;
+                    delete trimmedData[key].images[imgKey].server;
+                    delete trimmedData[key].images[imgKey].name;
+                  }
+                }
             }
           }
           else{
