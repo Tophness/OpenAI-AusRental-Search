@@ -120,7 +120,9 @@ app.use(express.static('public'));
 
 app.use((req, res, next) => {
   const params = new URLSearchParams(req.url.replace('/?',''));
-  imgParam = params.get('images');
+  if(params.get('images')){
+    imgParam = parseInt(params.get('images'));
+  }
   next();
 });
 
@@ -140,7 +142,7 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
       res.set("content-type", "application/json; charset=utf-8");
       res.set("accept", "application/json");
       let returnJSON = extractListingDetails(proxyResData);
-      if (imgParam) {
+      if (imgParam && imgParam !== 0) {
         returnJSON.listings = returnJSON.listings.map(obj => {
           delete obj.imageUrl;
           return obj;
