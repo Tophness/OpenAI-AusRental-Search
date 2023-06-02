@@ -318,6 +318,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                delete trimmedData[id].inspectionsAndAuctions;
              }
              if (trimmedData[id].generalFeatures) {
+			   if (!trimmedData[id].propertyFeatures) {
+                 trimmedData[id].propertyFeatures = [];
+               }
 			   trimmedData[id].propertyFeatures = trimmedData[id].propertyFeatures.concat(Object.values(trimmedData[id].generalFeatures).map((feature) => feature.label));
 			   delete trimmedData[id].generalFeatures;
 		     }
