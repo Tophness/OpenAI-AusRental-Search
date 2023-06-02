@@ -114,7 +114,7 @@ function extractListingDetails(html) {
 }
 
 var imgParam = 2;
-var descParam = 100;
+var descParam = 200;
 const app = express();
 app.use(cors());
 app.use(express.static('public'));
