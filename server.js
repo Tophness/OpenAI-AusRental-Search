@@ -44,7 +44,8 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
 	    terms: terms
       },
       petsAllowed:petsAllowed,
-      surroundingSuburbs: surroundingSuburbs
+      surroundingSuburbs: surroundingSuburbs,
+	  excludeNoDisplayPrice:true
     }
   };
   return obj;
@@ -291,7 +292,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
           pageSize: data.resolvedQuery.pageSize,
           listings: null
         };
-		let markForDeletion = [];
         for (const id in trimmedData) {
          if (trimmedData.hasOwnProperty(id)) {
            delete trimmedData[id].standard;
@@ -351,12 +351,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                trimmedData[id].nextInspectionTime = { startTime, endTime };
              }
              if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
-			   if(trimmedData[id].price.display.indexOf('$') != -1){
-                 trimmedData[id].price = trimmedData[id].price.display;
-			   }
-			   else{
-                 markForDeletion.push(id);
-			   }
+               trimmedData[id].price = trimmedData[id].price.display;
 		     }
 		   }
 		   catch(e){
@@ -421,9 +416,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
               }
             }
         }
-        for (let id in markForDeletion) {
-			trimmedData.splice(id, 1);
-		}
         returnJSON.listings = trimmedData;
         return JSON.stringify(returnJSON);
       }
