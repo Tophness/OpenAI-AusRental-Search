@@ -350,7 +350,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                trimmedData[id].nextInspectionTime = { startTime, endTime };
              }
              if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
-			   if(trimmedData[id].price.indexOf('$') != -1){
+			   if(trimmedData[id].price.display.indexOf('$') != -1){
                  trimmedData[id].price = trimmedData[id].price.display;
 			   }
 			   else{
