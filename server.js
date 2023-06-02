@@ -20,7 +20,7 @@ function getfeaturesList(variables) {
   return variableNames;
 }
 
-function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs, petsAllowed, terms) {
+function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs, furnished, petsAllowed, terms) {
   const obj = {
     channel: channel,
     localities: [
@@ -274,8 +274,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
 		params.minBathrooms,
 		params.minParkingSpaces,
         params.surroundingSuburbs,
+		params.furnished,
 		params.petsAllowed,
-		getfeaturesList({furnished: params.furnished, petsAllowed: params.petsAllowed, swimmingPool: params.swimmingPool, garage: params.garage, balcony: params.balcony, outdoorArea: params.outdoorArea, ensuite: params.ensuite, dishwasher: params.dishwasher, study: params.study, builtInRobes: params.builtInRobes, airConditioning: params.airConditioning, solarPanels: params.solarPanels, heating: params.heating, highEnergyEfficiency: params.highEnergyEfficiency, waterTank: params.waterTank, solarHotWater: params.solarHotWater})
+		getfeaturesList({swimmingPool: params.swimmingPool, garage: params.garage, balcony: params.balcony, outdoorArea: params.outdoorArea, ensuite: params.ensuite, dishwasher: params.dishwasher, study: params.study, builtInRobes: params.builtInRobes, airConditioning: params.airConditioning, solarPanels: params.solarPanels, heating: params.heating, highEnergyEfficiency: params.highEnergyEfficiency, waterTank: params.waterTank, solarHotWater: params.solarHotWater})
       );
       srcReq.url = '/services/listings/search?query=' + JSON.stringify(paramObject);
     }
