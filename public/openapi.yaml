@@ -9,7 +9,7 @@ paths:
   /domain/:
     get:
       operationId: getRentalsUsingDomain
-      summary: Get a list of available rentals in the area the user is searching using domain.com.au. Say something like "using domain" to search using domain.
+      summary: Get a list of available rentals in the area the user is searching using domain.com.au
       parameters:
         - in: query
           name: page
@@ -73,7 +73,7 @@ paths:
   /rentdc/{suburbs}:
     get:
       operationId: getRentalsUsingRent
-      summary: Get a list of available rentals in the area the user is searching using rent.com.au. Say something like "using rent" to search using rent.
+      summary: Get a list of available rentals in the area the user is searching using rent.com.au
       parameters:
         - in: path
           name: suburbs
@@ -173,7 +173,7 @@ paths:
   /realestate/:
     get:
       operationId: getRentalsUsingRealestate
-      summary: Get a list of available rentals in the area the user is searching using realestate.com.au. Say something like "using realestate" to search using realestate.
+      summary: Get a list of available rentals in the area the user is searching using realestate.com.au
       parameters:
         - in: query
           name: channel
@@ -275,12 +275,12 @@ components:
         page:
           type: number
           description: Current page number to use for pagination.
-        resultsPerPage:
+        listingsPerPage:
           type: number
           description: Number of current listing results per page to use for pagination.
-        totalResults:
+        totalListings:
           type: number
-          description: Total number of listing results to use for pagination.
+          description: Total number of property listings to use for pagination.
         listings:
           type: object
           additionalProperties:
@@ -337,7 +337,7 @@ components:
       properties:
         totalListings:
           type: number
-          description: Total number of property listings. You can also use this to work out how many more pages there are to navigate through by dividing the totalListings number by 20 (the number of listings per page)
+          description: Total number of property listings to use for pagination. You can also use this to work out how many more pages there are to navigate through by dividing the totalListings number by 20 (the number of listings per page)
         nextPageNum:
           type: number
           description: The next page number to navigate to
