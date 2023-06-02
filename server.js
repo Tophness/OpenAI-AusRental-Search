@@ -32,6 +32,11 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
     page: page,
     filters: {
       furnished:furnished,
+	  excludeNoDisplayPrice:"true",
+	  excludeNoSalePrice:"true",
+      excludeAuctions:"true",
+      "ex-under-contract":"true",
+      "ex-deposit-taken":"true",
       propertyTypes: [propertyType],
 	  bedroomsRange:{"minimum":minBedrooms},
 	  minimumBathroom:{"minimum":minBathrooms},
@@ -44,12 +49,7 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
 	    terms: terms
       },
       petsAllowed:petsAllowed,
-      surroundingSuburbs: surroundingSuburbs,
-	  excludeNoDisplayPrice:true,
-	  excludeNoSalePrice:true,
-      excludeAuctions:true,
-      "ex-under-contract":true,
-      "ex-deposit-taken":true,
+      surroundingSuburbs: surroundingSuburbs
     }
   };
   return obj;
