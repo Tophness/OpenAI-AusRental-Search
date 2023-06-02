@@ -313,6 +313,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                     delete trimmedData[key].images[imgKey].name;
                   }
                 }
+			  }
             }
           }
           else{
