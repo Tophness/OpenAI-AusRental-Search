@@ -20,13 +20,12 @@ function getfeaturesList(variables) {
   return variableNames;
 }
 
-function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs, furnished, petsAllowed, terms) {
+function constructObject(channel, searchLocation, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs, furnished, petsAllowed, terms) {
   const obj = {
     channel: channel,
     localities: [
       {
-        subdivision: subdivision,
-        postcode: postcode
+        searchLocation: searchLocation
       }
     ],
     pageSize: pageSize,
@@ -263,8 +262,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
       const params = extractUrlParameters(srcReq.url.replace('/?',''));
       const paramObject = constructObject(
         params.channel,
-        params.subdivision,
-        params.postcode,
+        params.searchLocation,
         params.pageSize,
         params.page,
         params.propertyType,

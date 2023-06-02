@@ -206,17 +206,11 @@ paths:
           required: false
           description: Minimum number of parking spaces user is searching for
         - in: query
-          name: subdivision
+          name: searchLocation
           schema:
             type: string
           required: false
-          description: State user is searching for properties in. Default is NSW
-        - in: query
-          name: postcode
-          schema:
-            type: number
-          required: false
-          description: Postcode user is searching for properties in. Default is 2287
+          description: Location user is searching for properties in. Can be suburb, postcode, state or any combination separated by commas. Default is "Penrith, NSW"
         - in: query
           name: pageSize
           schema:
