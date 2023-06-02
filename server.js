@@ -120,7 +120,7 @@ app.use(express.static('public'));
 
 app.use((req, res, next) => {
   const params = extractUrlParameters(req.url.replace('/?',''));
-  imgParam = params.get(images);
+  imgParam = params.get('images');
   next();
 });
 
