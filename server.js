@@ -425,6 +425,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
             }
         }
         for (let id in markForDeletion) {
+			console.log(trimmedData[id].price);
 			trimmedData.splice(id, 1);
 		}
         returnJSON.listings = trimmedData;
