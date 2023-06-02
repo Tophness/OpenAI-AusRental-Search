@@ -354,7 +354,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                  trimmedData[id].price = trimmedData[id].price.display;
 			   }
 			   else{
-                 trimmedData[id];
+                 delete trimmedData[id];
 			   }
 		     }
 		   }
