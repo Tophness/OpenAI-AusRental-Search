@@ -403,9 +403,9 @@ components:
               nextInspectionTime:
                 type: object
                 properties:
-                  startTimeDisplay:
+                  startTime:
                     type: string
-                  endTimeDisplay:
+                  endTime:
                     type: string
               address:
                 type: object
