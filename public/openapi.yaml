@@ -278,11 +278,11 @@ paths:
           required: false
           description: Whether to only include listings that have a balcony. Default is false
         - in: query
-          name: furnished
+          name: outdoorArea
           schema:
             type: boolean
           required: false
-          description: Whether to only include listings that have an outdoorArea. Default is false
+          description: Whether to only include listings that have an outdoor area. Default is false
         - in: query
           name: ensuite
           schema:
