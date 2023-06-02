@@ -10,7 +10,7 @@ function extractUrlParameters(urlString) {
   return params;
 }
 
-function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, surroundingSuburbs, replaceProjectWithFirstChild) {
+function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs) {
   const obj = {
     channel: channel,
     localities: [
@@ -23,12 +23,14 @@ function constructObject(channel, subdivision, postcode, pageSize, page, propert
     page: page,
     filters: {
       propertyTypes: [propertyType],
+	  "minimum-bedrooms": minBedrooms,
+	  "minimum-bathrooms": minBathrooms,
+	  "minimum-parking-spaces": minParkingSpaces,
       priceRange: {
         minimum: minimumPrice,
         maximum: maximumPrice
       },
-      surroundingSuburbs: surroundingSuburbs,
-      replaceProjectWithFirstChild: replaceProjectWithFirstChild
+      surroundingSuburbs: surroundingSuburbs
     }
   };
   return obj;
@@ -253,8 +255,10 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
         params.propertyType,
         params.minimumPrice,
         params.maximumPrice,
-        params.surroundingSuburbs,
-        params.replaceProjectWithFirstChild
+		params.minBedrooms,
+		params.minBathrooms,
+		params.minParkingSpaces,
+        params.surroundingSuburbs
       );
       srcReq.url = '/services/listings/search?query=' + JSON.stringify(paramObject);
     }

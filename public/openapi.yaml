@@ -188,6 +188,24 @@ paths:
           required: true
           description: A type of property the user is looking for. Options are house, apartment, townhouse, villa, unit or all. Default is all
         - in: query
+          name: minBedrooms
+          schema:
+            type: number
+          required: false
+          description: Minimum number of bedrooms user is searching for
+        - in: query
+          name: minBathrooms
+          schema:
+            type: number
+          required: false
+          description: Minimum number of bathrooms user is searching for
+        - in: query
+          name: minParkingSpaces
+          schema:
+            type: number
+          required: false
+          description: Minimum number of parking spaces user is searching for
+        - in: query
           name: subdivision
           schema:
             type: string
@@ -229,12 +247,6 @@ paths:
             type: boolean
           required: false
           description: Whether to search for surrounding suburbs. Default is true
-        - in: query
-          name: replaceProjectWithFirstChild
-          schema:
-            type: boolean
-          required: false
-          description: Default is false
         - in: query
           name: images
           schema:
