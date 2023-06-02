@@ -325,9 +325,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].title;
 		   delete trimmedData[id].inspectionsAndAuctions;
 		   try{
-             if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
-               trimmedData[id].price = trimmedData[id].price.display;
-		     }
              if (trimmedData[id].hasOwnProperty('propertyFeatures')) {
                trimmedData[id].propertyFeatures.forEach((feature) => {
                  delete feature.section;
@@ -352,6 +349,14 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
 			   const { startTime, endTime } = trimmedData[id].nextInspectionTime;
                trimmedData[id].nextInspectionTime = { startTime, endTime };
              }
+             if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
+			   if(trimmedData[id].price.indexOf('$') != -1){
+                 trimmedData[id].price = trimmedData[id].price.display;
+			   }
+			   else{
+                 trimmedData[id];
+			   }
+		     }
 		   }
 		   catch(e){
 		   }
