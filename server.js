@@ -329,8 +329,8 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                trimmedData[id].dateAvailable = trimmedData[id].dateAvailable.date;
              }
 			 if (trimmedData[id].nextInspectionTime && trimmedData[id].nextInspectionTime.startTimeDisplay && trimmedData[id].nextInspectionTime.endTimeDisplay) {
-			   const { startTimeDisplay, endTimeDisplay } = trimmedData[id].nextInspectionTime;
-               trimmedData[id].nextInspectionTime = { startTimeDisplay, endTimeDisplay };
+			   const { startTime, endTime } = trimmedData[id].nextInspectionTime;
+               trimmedData[id].nextInspectionTime = { startTime, endTime };
              }
 		   }
 		   catch(e){
