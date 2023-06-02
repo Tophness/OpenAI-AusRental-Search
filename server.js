@@ -45,7 +45,11 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
       },
       petsAllowed:petsAllowed,
       surroundingSuburbs: surroundingSuburbs,
-	  excludeNoDisplayPrice:true
+	  excludeNoDisplayPrice:true,
+	  excludeNoSalePrice:true,
+      excludeAuctions:true,
+      "ex-under-contract":true,
+      "ex-deposit-taken":true,
     }
   };
   return obj;
