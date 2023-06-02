@@ -248,6 +248,102 @@ paths:
           required: false
           description: Whether to search for surrounding suburbs. Default is true
         - in: query
+          name: furnished
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that are furnished. Default is false
+        - in: query
+          name: petsAllowed
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that allow pets. Default is false
+        - in: query
+          name: swimmingPool
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have swimming pools. Default is false
+        - in: query
+          name: garage
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have a garage. Default is false
+        - in: query
+          name: balcony
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have a balcony. Default is false
+        - in: query
+          name: furnished
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have an outdoorArea. Default is false
+        - in: query
+          name: ensuite
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have an ensuite. Default is false
+        - in: query
+          name: dishwasher
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have a dishwasher. Default is false
+        - in: query
+          name: study
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have a study. Default is false
+        - in: query
+          name: builtInRobes
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have built in wardrobes. Default is false
+        - in: query
+          name: airConditioning
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have air conditioning. Default is false
+        - in: query
+          name: solarPanels
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have a solar panels. Default is false
+        - in: query
+          name: heating
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have heating. Default is false
+        - in: query
+          name: highEnergyEfficiency
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have high energy efficiency. Default is false
+        - in: query
+          name: waterTank
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have a water tank. Default is false
+        - in: query
+          name: solarHotWater
+          schema:
+            type: boolean
+          required: false
+          description: Whether to only include listings that have solar hot water. Default is false
+        - in: query
           name: images
           schema:
             type: integer
@@ -258,7 +354,7 @@ paths:
           schema:
             type: integer
           required: false
-          description: Set to 0 to disable desciption results or any other number to set the amount of characters to trim the description down to. Default value is 100
+          description: Set to 0 to disable desciption results or any other number to set the amount of characters to trim the description down to. Default value is 200
       responses:
         "200":
           description: OK

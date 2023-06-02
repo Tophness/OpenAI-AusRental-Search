@@ -10,7 +10,17 @@ function extractUrlParameters(urlString) {
   return params;
 }
 
-function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs) {
+function getfeaturesList(variables) {
+  const variableNames = [];
+  for (const variable in variables) {
+    if (variables[variable]) {
+      variableNames.push(variable);
+    }
+  }
+  return variableNames;
+}
+
+function constructObject(channel, subdivision, postcode, pageSize, page, propertyType, minimumPrice, maximumPrice, minBedrooms, minBathrooms, minParkingSpaces, surroundingSuburbs, petsAllowed, terms) {
   const obj = {
     channel: channel,
     localities: [
@@ -22,16 +32,61 @@ function constructObject(channel, subdivision, postcode, pageSize, page, propert
     pageSize: pageSize,
     page: page,
     filters: {
+      furnished:furnished,
       propertyTypes: [propertyType],
-	  "minimum-bedrooms": minBedrooms,
-	  "minimum-bathrooms": minBathrooms,
-	  "minimum-parking-spaces": minParkingSpaces,
+	  bedroomsRange:{"minimum":minBedrooms},
+	  minimumBathroom:{"minimum":minBathrooms},
+	  minimumCars:{"minimum":minParkingSpaces},
       priceRange: {
         minimum: minimumPrice,
         maximum: maximumPrice
       },
+      "keywords":{
+	    terms: terms
+      },
+      petsAllowed:petsAllowed,
       surroundingSuburbs: surroundingSuburbs
     }
+  };
+  const obj = {
+   "channel":"rent",
+   "page":1,
+   "pageSize":25,
+   "localities":[
+      {
+         "searchLocation":"parramatta - greater region, nsw"
+      }
+   ],
+   "filters":{
+      "surroundingSuburbs":true,
+      "excludeNoSalePrice":false,
+      "ex-under-contract":false,
+      "ex-deposit-taken":false,
+      "excludeAuctions":false,
+      "excludeNoDisplayPrice":false,
+      "excludePrivateSales":false,
+      "furnished":true,
+      "keywords":{
+         "terms":[
+            "swimming pool",
+            "garage",
+            "balcony",
+            "outdoor area",
+            "ensuite",
+            "dishwasher",
+            "study",
+            "built in robes",
+            "air conditioning",
+            "solar panels",
+            "heating",
+            "high energy efficiency",
+            "water tank",
+            "solar hot water"
+         ]
+      },
+      "petsAllowed":true,
+      "hasScheduledAuction":false
+   }
   };
   return obj;
 }
@@ -258,7 +313,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
 		params.minBedrooms,
 		params.minBathrooms,
 		params.minParkingSpaces,
-        params.surroundingSuburbs
+        params.surroundingSuburbs,
+		params.petsAllowed,
+		getfeaturesList({furnished: params.furnished, petsAllowed: params.petsAllowed, swimmingPool: params.swimmingPool, garage: params.garage, balcony: params.balcony, outdoorArea: params.outdoorArea, ensuite: params.ensuite, dishwasher: params.dishwasher, study: params.study, builtInRobes: params.builtInRobes, airConditioning: params.airConditioning, solarPanels: params.solarPanels, heating: params.heating, highEnergyEfficiency: params.highEnergyEfficiency, waterTank: params.waterTank, solarHotWater: params.solarHotWater}
       );
       srcReq.url = '/services/listings/search?query=' + JSON.stringify(paramObject);
     }
