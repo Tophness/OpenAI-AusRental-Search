@@ -410,10 +410,7 @@ components:
                       parkingSpaces:
                         type: number
               price:
-                type: object
-                properties:
-                  display:
-                    type: string
+                type: string
               propertyType:
                 type: string
               address:
@@ -445,17 +442,8 @@ components:
                       type: array
                       items:
                         type: string
-                    section:
-                      type: string
-                    label:
-                      type: string
               bond:
-                type: object
-                properties:
-                  display:
-                    type: string
-                  value:
-                    type: number
+                type: string
               dateAvailable:
                 type: object
                 properties:
@@ -466,32 +454,6 @@ components:
                 items:
                   type: object
               generalFeatures:
-                type: object
-                properties:
-                  bedrooms:
-                    type: object
-                    properties:
-                      label:
-                        type: string
-                      type:
-                        type: string
-                      value:
-                        type: number
-                  bathrooms:
-                    type: object
-                    properties:
-                      label:
-                        type: string
-                      type:
-                        type: string
-                      value:
-                        type: number
-                  parkingSpaces:
-                    type: object
-                    properties:
-                      label:
-                        type: string
-                      type:
-                        type: string
-                      value:
-                        type: number
+                type: array
+                items:
+                  type: string
