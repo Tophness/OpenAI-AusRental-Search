@@ -32,11 +32,6 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
     page: page,
     filters: {
       furnished:furnished,
-	  excludeNoDisplayPrice:"true",
-	  excludeNoSalePrice:"true",
-      excludeAuctions:"true",
-      "ex-under-contract":"true",
-      "ex-deposit-taken":"true",
       propertyTypes: [propertyType],
 	  bedroomsRange:{"minimum":minBedrooms},
 	  minimumBathroom:{"minimum":minBathrooms},
@@ -49,7 +44,14 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
 	    terms: terms
       },
       petsAllowed:petsAllowed,
-      surroundingSuburbs: surroundingSuburbs
+      surroundingSuburbs: surroundingSuburbs,
+      petsAllowed:petsAllowed,
+      surroundingSuburbs: surroundingSuburbs,
+	  excludeNoDisplayPrice:true,
+	  excludeNoSalePrice:true,
+      excludeAuctions:true,
+      "ex-under-contract":true,
+      "ex-deposit-taken":true
     }
   };
   return obj;
@@ -296,6 +298,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
           pageSize: data.resolvedQuery.pageSize,
           listings: null
         };
+		let markForDeletion = [];
         for (const id in trimmedData) {
          if (trimmedData.hasOwnProperty(id)) {
            delete trimmedData[id].standard;
@@ -356,6 +359,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
              }
              if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
                trimmedData[id].price = trimmedData[id].price.display;
+			   if(trimmedData[id].price.indexOf('$') == -1){
+                 markForDeletion.push(id);
+			   }
 		     }
 		   }
 		   catch(e){
@@ -420,6 +426,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
               }
             }
         }
+        for (let id in markForDeletion) {
+			trimmedData.splice(id, 1);
+		}
         returnJSON.listings = trimmedData;
         return JSON.stringify(returnJSON);
       }
