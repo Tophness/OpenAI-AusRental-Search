@@ -403,18 +403,10 @@ components:
               nextInspectionTime:
                 type: object
                 properties:
-                  dateDisplay:
-                    type: string
                   startTimeDisplay:
                     type: string
                   endTimeDisplay:
                     type: string
-                  startTime:
-                    type: string
-                  endTime:
-                    type: string
-                  auction:
-                    type: boolean
               address:
                 type: object
                 properties:
