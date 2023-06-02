@@ -393,6 +393,7 @@ components:
                   type: string
               prettyUrl:
                 type: string
+                description: url of the listing. prepend this url with "https://www.realestate.com.au/"
               description:
                 type: string
               title:

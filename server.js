@@ -300,6 +300,9 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].modifiedDate;
            delete trimmedData[id].isRentChannel;
            delete trimmedData[id].applyOnline;
+           delete trimmedData[id].status;
+           delete trimmedData[id].features;
+           delete trimmedData[id].title;
 		   try{
              if (trimmedData[id].price && trimmedData[id].price.display) {
                trimmedData[id].price = trimmedData[id].price.display;
