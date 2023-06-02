@@ -114,6 +114,7 @@ function extractListingDetails(html) {
 }
 
 var imgParam = 2;
+var descParam = 2;
 const app = express();
 app.use(cors());
 app.use(express.static('public'));
@@ -122,6 +123,9 @@ app.use((req, res, next) => {
   const params = new URLSearchParams(req.url.replace('/?',''));
   if(params.get('images')){
     imgParam = parseInt(params.get('images'));
+  }
+  if(params.get('descriptionLength')){
+    descParam = parseInt(params.get('descriptionLength'));
   }
   next();
 });
@@ -297,6 +301,29 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].isRentChannel;
            delete trimmedData[id].applyOnline;
          }
+        }
+        if (descParam) {
+          if(descParam > 0){
+            for (let key in trimmedData) {
+              if (trimmedData.hasOwnProperty(key)) {
+				trimmedData[key].description = description.slice(0, descParam);
+			  }
+            }
+          }
+          else{
+            for (let key in trimmedData) {
+              if (trimmedData.hasOwnProperty(key)) {
+                delete trimmedData[key].description;
+              }
+            }
+          }
+        }
+        else{
+            for (let key in trimmedData) {
+              if (trimmedData.hasOwnProperty(key)) {
+                delete trimmedData[key].description;
+              }
+            }
         }
         if (imgParam) {
           if(imgParam > 0){
