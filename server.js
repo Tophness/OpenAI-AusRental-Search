@@ -309,7 +309,8 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                 for (let imgKey in trimmedData[key].images) {
                   if (trimmedData[key].images.hasOwnProperty(imgKey)) {
 					if(trimmedData[key].images[imgKey].url){
-                      trimmedData[key].images[imgKey].url = trimmedData[key].images[imgKey].server + trimmedData[key].images[imgKey].url;
+					  const serveradd = trimmedData[key].images[imgKey].server;
+                      trimmedData[key].images[imgKey].url = serveradd + trimmedData[key].images[imgKey].url;
 					}
 					if(trimmedData[key].images[imgKey].server){
 					  delete trimmedData[key].images[imgKey].server;
