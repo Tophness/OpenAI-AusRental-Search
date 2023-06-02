@@ -300,16 +300,24 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].modifiedDate;
            delete trimmedData[id].isRentChannel;
            delete trimmedData[id].applyOnline;
-           trimmedData[id].price = trimmedData[id].price.display;
-           trimmedData[id].propertyFeatures.forEach((feature) => {
-             delete feature.section;
-             delete feature.label;
-           });
-           trimmedData[id].bond = trimmedData[id].bond.display;
+           if (trimmedData[id].price && trimmedData[id].price.display) {
+             trimmedData[id].price = trimmedData[id].price.display;
+		   }
+           if (trimmedData[id].propertyFeatures) {
+             trimmedData[id].propertyFeatures.forEach((feature) => {
+               delete feature.section;
+               delete feature.label;
+             });
+		   }
+           if (trimmedData[id].bond && trimmedData[id].bond.display) {
+             trimmedData[id].bond = trimmedData[id].bond.display;
+		   }
            if (trimmedData[id].inspectionsAndAuctions.length === 0) {
              delete trimmedData[id].inspectionsAndAuctions;
            }
-           trimmedData[id].generalFeatures = Object.values(trimmedData[id].generalFeatures).map((feature) => feature.label);
+           if (trimmedData[id].generalFeatures) {
+             trimmedData[id].generalFeatures = Object.values(trimmedData[id].generalFeatures).map((feature) => feature.label);
+		   }
          }
         }
         if (descParam) {
