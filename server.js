@@ -113,9 +113,16 @@ function extractListingDetails(html) {
   return returnJSON;
 }
 
+var imgParam = 2;
 const app = express();
 app.use(cors());
 app.use(express.static('public'));
+
+app.use((req, res, next) => {
+  const params = extractUrlParameters(req.url.replace('/?',''));
+  imgParam = params.get(images);
+  next();
+});
 
 app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
@@ -132,9 +139,8 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
     if (req.url.indexOf('/properties') !== -1) {
       res.set("content-type", "application/json; charset=utf-8");
       res.set("accept", "application/json");
-      const imgParam = req.url.match('[?&]images=([^&]+)');
       let returnJSON = extractListingDetails(proxyResData);
-      if (imgParam && imgParam[1] == "0") {
+      if (imgParam) {
         returnJSON.listings = returnJSON.listings.map(obj => {
           delete obj.imageUrl;
           return obj;
@@ -183,15 +189,13 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
            delete trimmedData[id].listingModel.tags;
          }
         }
-        const imgParam = req.url.match('[?&]images=([^&]+)');
         if (imgParam) {
-          const numImages = parseInt(imgParam[1]);
-          if(numImages > 0){
+          if(imgParam > 0){
             for (let key in trimmedData) {
               if (trimmedData.hasOwnProperty(key)) {
                 const images = trimmedData[key].listingModel.images;
-                if (Array.isArray(images) && images.length > numImages) {
-                  trimmedData[key].listingModel.images = images.slice(0, numImages);
+                if (Array.isArray(images) && images.length > imgParam) {
+                  trimmedData[key].listingModel.images = images.slice(0, imgParam);
                 }
               }
             }
@@ -233,7 +237,6 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
 app.use('/realestate', proxy('https://services.realestate.com.au/services/listings/search', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
-      const params = extractUrlParameters(srcReq.url.replace('/?',''));
       const paramObject = constructObject(
         params.channel,
         params.subdivision,
@@ -292,15 +295,13 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].applyOnline;
          }
         }
-        const imgParam = req.url.match('[?&]images=([^&]+)');
         if (imgParam) {
-          const numImages = parseInt(imgParam[1]);
-          if(numImages > 0){
+          if(imgParam > 0){
             for (let key in trimmedData) {
               if (trimmedData.hasOwnProperty(key)) {
                 const images = trimmedData[key].images;
-                if (Array.isArray(images) && images.length > numImages) {
-                  trimmedData[key].images = images.slice(0, numImages);
+                if (Array.isArray(images) && images.length > imgParam) {
+                  trimmedData[key].images = images.slice(0, imgParam);
                 }
               }
             }
