@@ -306,7 +306,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
           if(descParam > 0){
             for (let key in trimmedData) {
               if (trimmedData.hasOwnProperty(key)) {
-				trimmedData[key].description = description.slice(0, descParam);
+				trimmedData[key].description = trimmedData[key].description.slice(0, descParam);
 			  }
             }
           }
