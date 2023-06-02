@@ -224,8 +224,8 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
         trimmedData = {
           'totalPages': data.props.pageViewMetadata.searchResponse.SearchResults.totalPages,
           'page': data.props.pageViewMetadata.searchResponse.SearchResults.page,
-          'totalResults': data.props.pageViewMetadata.searchResponse.SearchResults.totalResults,
-          'resultsPerPage': data.props.listingSearchResultIds.length,
+          'totalListings': data.props.pageViewMetadata.searchResponse.SearchResults.totalResults,
+          'listingsPerPage': data.props.listingSearchResultIds.length,
           'listings': trimmedData
         };
         return JSON.stringify(trimmedData);
