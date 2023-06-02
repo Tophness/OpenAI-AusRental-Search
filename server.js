@@ -237,7 +237,7 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
 app.use('/realestate', proxy('https://services.realestate.com.au/services/listings/search', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1) {
-      const params = new URLSearchParams(req.url.replace('/?',''));
+      const params = extractUrlParameters(req.url.replace('/?',''));
       const paramObject = constructObject(
         params.channel,
         params.subdivision,
