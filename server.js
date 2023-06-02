@@ -308,6 +308,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                delete feature.section;
                delete feature.label;
              });
+			 json.propertyFeatures = json.propertyFeatures.map((feature) => feature.features);
 		   }
            if (trimmedData[id].bond && trimmedData[id].bond.display) {
              trimmedData[id].bond = trimmedData[id].bond.display;

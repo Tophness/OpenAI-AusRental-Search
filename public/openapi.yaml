@@ -436,12 +436,7 @@ components:
               propertyFeatures:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    features:
-                      type: array
-                      items:
-                        type: string
+                  type: string
               bond:
                 type: string
               dateAvailable:
