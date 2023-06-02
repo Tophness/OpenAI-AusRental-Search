@@ -119,7 +119,7 @@ app.use(cors());
 app.use(express.static('public'));
 
 app.use((req, res, next) => {
-  const params = extractUrlParameters(req.url.replace('/?',''));
+  const params = new URLSearchParams(req.url.replace('/?',''));
   imgParam = params.get('images');
   next();
 });
