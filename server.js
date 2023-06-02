@@ -303,30 +303,34 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].status;
            delete trimmedData[id].features;
            delete trimmedData[id].title;
+		   delete trimmedData[id].inspectionsAndAuctions;
 		   try{
-             if (trimmedData[id].price && trimmedData[id].price.display) {
+             if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
                trimmedData[id].price = trimmedData[id].price.display;
 		     }
-             if (trimmedData[id].propertyFeatures) {
+             if (trimmedData[id].hasOwnProperty('propertyFeatures')) {
                trimmedData[id].propertyFeatures.forEach((feature) => {
                  delete feature.section;
                  delete feature.label;
                });
 			   trimmedData[id].propertyFeatures = trimmedData[id].propertyFeatures.map((feature) => feature.features).flat();
 		     }
-             if (trimmedData[id].bond && trimmedData[id].bond.display) {
+             if (trimmedData[id].hasOwnProperty('bond') && trimmedData[id].bond.hasOwnProperty('display')) {
                trimmedData[id].bond = trimmedData[id].bond.display;
 		     }
-             if (trimmedData[id].inspectionsAndAuctions.length === 0) {
+             if (trimmedData[id].hasOwnProperty('inspectionsAndAuctions') && trimmedData[id].inspectionsAndAuctions.length === 0) {
                delete trimmedData[id].inspectionsAndAuctions;
              }
-             if (trimmedData[id].generalFeatures) {
+             if (trimmedData[id].hasOwnProperty('generalFeatures')) {
 			   if (!trimmedData[id].propertyFeatures) {
                  trimmedData[id].propertyFeatures = [];
                }
 			   trimmedData[id].propertyFeatures = trimmedData[id].propertyFeatures.concat(Object.values(trimmedData[id].generalFeatures).map((feature) => feature.label));
 			   delete trimmedData[id].generalFeatures;
 		     }
+			 if (trimmedData[id].hasOwnProperty('dateAvailable') && trimmedData[id].dateAvailable.hasOwnProperty('date')) {
+               trimmedData[id].dateAvailable = trimmedData[id].dateAvailable.date;
+             }
 		   }
 		   catch(e){
 		   }
