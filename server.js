@@ -48,46 +48,6 @@ function constructObject(channel, subdivision, postcode, pageSize, page, propert
       surroundingSuburbs: surroundingSuburbs
     }
   };
-  const obj = {
-   "channel":"rent",
-   "page":1,
-   "pageSize":25,
-   "localities":[
-      {
-         "searchLocation":"parramatta - greater region, nsw"
-      }
-   ],
-   "filters":{
-      "surroundingSuburbs":true,
-      "excludeNoSalePrice":false,
-      "ex-under-contract":false,
-      "ex-deposit-taken":false,
-      "excludeAuctions":false,
-      "excludeNoDisplayPrice":false,
-      "excludePrivateSales":false,
-      "furnished":true,
-      "keywords":{
-         "terms":[
-            "swimming pool",
-            "garage",
-            "balcony",
-            "outdoor area",
-            "ensuite",
-            "dishwasher",
-            "study",
-            "built in robes",
-            "air conditioning",
-            "solar panels",
-            "heating",
-            "high energy efficiency",
-            "water tank",
-            "solar hot water"
-         ]
-      },
-      "petsAllowed":true,
-      "hasScheduledAuction":false
-   }
-  };
   return obj;
 }
 
