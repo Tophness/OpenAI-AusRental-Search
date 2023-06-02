@@ -300,24 +300,29 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
            delete trimmedData[id].modifiedDate;
            delete trimmedData[id].isRentChannel;
            delete trimmedData[id].applyOnline;
-           if (trimmedData[id].price && trimmedData[id].price.display) {
-             trimmedData[id].price = trimmedData[id].price.display;
+		   try{
+             if (trimmedData[id].price && trimmedData[id].price.display) {
+               trimmedData[id].price = trimmedData[id].price.display;
+		     }
+             if (trimmedData[id].propertyFeatures) {
+               trimmedData[id].propertyFeatures.forEach((feature) => {
+                 delete feature.section;
+                 delete feature.label;
+               });
+			   trimmedData[id].propertyFeatures = trimmedData[id].propertyFeatures.map((feature) => feature.features).flat();
+		     }
+             if (trimmedData[id].bond && trimmedData[id].bond.display) {
+               trimmedData[id].bond = trimmedData[id].bond.display;
+		     }
+             if (trimmedData[id].inspectionsAndAuctions.length === 0) {
+               delete trimmedData[id].inspectionsAndAuctions;
+             }
+             if (trimmedData[id].generalFeatures) {
+			   trimmedData[id].propertyFeatures = trimmedData[id].propertyFeatures.concat(Object.values(trimmedData[id].generalFeatures).map((feature) => feature.label));
+			   delete trimmedData[id].generalFeatures;
+		     }
 		   }
-           if (trimmedData[id].propertyFeatures) {
-             trimmedData[id].propertyFeatures.forEach((feature) => {
-               delete feature.section;
-               delete feature.label;
-             });
-			 trimmedData[id].propertyFeatures = trimmedData[id].propertyFeatures.map((feature) => feature.features).flat();
-		   }
-           if (trimmedData[id].bond && trimmedData[id].bond.display) {
-             trimmedData[id].bond = trimmedData[id].bond.display;
-		   }
-           if (trimmedData[id].inspectionsAndAuctions.length === 0) {
-             delete trimmedData[id].inspectionsAndAuctions;
-           }
-           if (trimmedData[id].generalFeatures) {
-             trimmedData[id].generalFeatures = Object.values(trimmedData[id].generalFeatures).map((feature) => feature.label);
+		   catch(e){
 		   }
          }
         }

@@ -448,7 +448,3 @@ components:
                 type: array
                 items:
                   type: object
-              generalFeatures:
-                type: array
-                items:
-                  type: string
