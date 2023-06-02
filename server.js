@@ -307,7 +307,7 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
                   trimmedData[key].images = images.slice(0, imgParam);
                 }
                 for (let imgKey in images) {
-                  if (trimmedData.hasOwnProperty(imgKey)) {
+                  if (images.hasOwnProperty(imgKey)) {
 					if(trimmedData[key].images[imgKey].server){
                       trimmedData[key].images[imgKey].url = trimmedData[key].images[imgKey].server + trimmedData[key].images[imgKey].url;
 					}
