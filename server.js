@@ -318,9 +318,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
              if (trimmedData[id].hasOwnProperty('bond') && trimmedData[id].bond.hasOwnProperty('display')) {
                trimmedData[id].bond = trimmedData[id].bond.display;
 		     }
-             if (trimmedData[id].hasOwnProperty('inspectionsAndAuctions') && trimmedData[id].inspectionsAndAuctions.length === 0) {
-               delete trimmedData[id].inspectionsAndAuctions;
-             }
              if (trimmedData[id].hasOwnProperty('generalFeatures')) {
 			   if (!trimmedData[id].propertyFeatures) {
                  trimmedData[id].propertyFeatures = [];

@@ -396,20 +396,6 @@ components:
                 description: url of the listing. prepend this url with "https://www.realestate.com.au/"
               description:
                 type: string
-              title:
-                type: string
-              features:
-                type: object
-                properties:
-                  general:
-                    type: object
-                    properties:
-                      bedrooms:
-                        type: number
-                      bathrooms:
-                        type: number
-                      parkingSpaces:
-                        type: number
               price:
                 type: string
               propertyType:
@@ -441,11 +427,4 @@ components:
               bond:
                 type: string
               dateAvailable:
-                type: object
-                properties:
-                  date:
-                    type: string
-              inspectionsAndAuctions:
-                type: array
-                items:
-                  type: object
+                type: string
