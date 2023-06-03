@@ -373,6 +373,9 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
            delete trimmedData[id].listingModel.hasVideo;
            delete trimmedData[id].listingModel.promoType;
            delete trimmedData[id].listingModel.tags;
+		   if(trimmedData[id].address.street && trimmedData[id].address.suburb && trimmedData[id].address.state && trimmedData[id].address.postcode){
+		     trimmedData[id].address = `${trimmedData[id].address.street}, ${trimmedData[id].address.suburb}, ${trimmedData[id].address.state} ${trimmedData[id].address.postcode}`;
+		   }
          }
         }
         if (imgParam) {

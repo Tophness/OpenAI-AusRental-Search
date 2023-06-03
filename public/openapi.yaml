@@ -600,18 +600,7 @@ components:
                 type: object
                 properties:
                   address:
-                    type: object
-                    properties:
-                      city:
-                        type: string
-                      state:
-                        type: string
-                      street:
-                        type: string
-                      postcode:
-                        type: string
-                      suburb:
-                        type: string
+                    type: string
                   images:
                     type: array
                     items:
