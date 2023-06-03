@@ -2,8 +2,8 @@
     "schema_version": "v1",
     "name_for_human": "Australian Rental Finder",
     "name_for_model": "rent",
-    "description_for_human": "Find properties to rent in Australia using domain.com.au, realestate.com.au and rent.com.au",
-    "description_for_model": "Find properties to rent using domain.com.au, realestate.com.au and rent.com.au. Default is using domain.",
+    "description_for_human": "Find properties to rent in Australia using domain.com.au, realestate.com.au, rent.com.au and flatmates.com.au",
+    "description_for_model": "Find properties to rent using domain.com.au, realestate.com.au, rent.com.au and flatmates.com.au. Default is using domain.",
     "auth": {
         "type": "none"
     },
