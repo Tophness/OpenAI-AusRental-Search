@@ -376,21 +376,21 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
 		   if(trimmedData[id].listingModel.address.street && trimmedData[id].listingModel.address.suburb && trimmedData[id].listingModel.address.state && trimmedData[id].listingModel.address.postcode){
 		     trimmedData[id].listingModel.address = `${trimmedData[id].listingModel.address.street}, ${trimmedData[id].listingModel.address.suburb}, ${trimmedData[id].listingModel.address.state} ${trimmedData[id].listingModel.address.postcode}`;
 		   }
-		   if(trimmedData[id].features){
-			 if(trimmedData[id].features.propertyType){
-		       delete trimmedData[id].features.propertyType;
+		   if(trimmedData[id].listingModel.features){
+			 if(trimmedData[id].listingModel.features.propertyType){
+		       delete trimmedData[id].listingModel.features.propertyType;
 			 }
-			 if(trimmedData[id].features.isRural){
-		       delete trimmedData[id].features.isRural;
+			 if(trimmedData[id].listingModel.features.isRural){
+		       delete trimmedData[id].listingModel.features.isRural;
 			 }
-			 if(trimmedData[id].features.landSize){
-		       delete trimmedData[id].features.landSize;
+			 if(trimmedData[id].listingModel.features.landSize){
+		       delete trimmedData[id].listingModel.features.landSize;
 			 }
-			 if(trimmedData[id].features.landUnit){
-		       delete trimmedData[id].features.landUnit;
+			 if(trimmedData[id].listingModel.features.landUnit){
+		       delete trimmedData[id].listingModel.features.landUnit;
 			 }
-			 if(trimmedData[id].features.isRetirement){
-		       delete trimmedData[id].features.isRetirement;
+			 if(trimmedData[id].listingModel.features.isRetirement){
+		       delete trimmedData[id].listingModel.features.isRetirement;
 			 }
 		   }
          }
