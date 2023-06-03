@@ -510,25 +510,7 @@ components:
                   endTime:
                     type: string
               address:
-                type: object
-                properties:
-                  streetAddress:
-                    type: string
-                  postcode:
-                    type: string
-                  suburb:
-                    type: string
-                  postCode:
-                    type: string
-                  location:
-                    type: object
-                    properties:
-                      latitude:
-                        type: number
-                      longitude:
-                        type: number
-                  state:
-                    type: string
+                type: string
               propertyFeatures:
                 type: array
                 items:

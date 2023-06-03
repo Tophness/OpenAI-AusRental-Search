@@ -356,7 +356,11 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
              }
              if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
                trimmedData[id].price = trimmedData[id].price.display;
+			   if(trimmedData[id].price.indexOf('$') == -1){
+				   delete trimmedData[id].price;
+			   }
 		     }
+			 trimmedData[id].address = `${trimmedData[id].address.streetAddress}, ${trimmedData[id].address.suburb}, ${trimmedData[id].address.state} (${trimmedData[id].address.postcode || trimmedData[id].address.postCode})`;
 		   }
 		   catch(e){
 		   }
