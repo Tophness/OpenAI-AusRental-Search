@@ -354,12 +354,18 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
 			   const { startTime, endTime } = trimmedData[id].nextInspectionTime;
                trimmedData[id].nextInspectionTime = { startTime, endTime };
              }
-             if (trimmedData[id].hasOwnProperty('price') && trimmedData[id].price.hasOwnProperty('display')) {
-               trimmedData[id].price = trimmedData[id].price.display.replace('per week','pw');
+             if (trimmedData[id].hasOwnProperty('price')) {
+			   if(trimmedData[id].price.hasOwnProperty('display')){
+                 trimmedData[id].price = trimmedData[id].price.display;
+			   }
+			   trimmedData[id].price = trimmedData[id].price.replace('per week','pw')
 			   if(trimmedData[id].price.indexOf('$') == -1){
 				   delete trimmedData[id].price;
 			   }
 		     }
+			 else{
+				 console.log(trimmedData[id]);
+			 }
 			 trimmedData[id].address = `${trimmedData[id].address.streetAddress}, ${trimmedData[id].address.suburb}, ${trimmedData[id].address.state} ${trimmedData[id].address.postcode || trimmedData[id].address.postCode}`;
 		   }
 		   catch(e){
