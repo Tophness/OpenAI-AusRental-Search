@@ -167,7 +167,7 @@ function extractFlatmatesListingInfo(obj, n) {
   };
 }
 
-function generateFlatmatesURL(baseUrl,locations,bathroomType,furnishings,parking,gender,lengthOfStay,allFemale,lgbtFriendly,retirees,students,smokers,backpackers,children,over40,pets,numberOfRooms,room,dateAvailable,minBudget,maxBudget,billsIncluded,keywordInput,wholeProperties,studios,oneBeds,grannyFlats,studentAccommodation,homestays,shareHouses,page) {
+function generateFlatmatesURL(baseUrl,locations,bathroomType,furnishings,parking,gender,lengthOfStay,allFemale,lgbtFriendly,retirees,students,smokers,backpackers,children,over40,pets,numberOfRooms,room,dateAvailable,minBudget,maxBudget,billsIncluded,keywordInput,wholeProperties,studios,grannyFlats,studentAccommodation,homestays,shareHouses,page) {
   let url = baseUrl + locations + "/";
   
   if (numberOfRooms > 1) {
@@ -264,10 +264,6 @@ function generateFlatmatesURL(baseUrl,locations,bathroomType,furnishings,parking
   
   if (studios) {
     url += "studios+";
-  }
-  
-  if (oneBeds) {
-    url += "one-beds+";
   }
   
   if (grannyFlats) {
@@ -653,7 +649,6 @@ app.use('/flatmates', proxy('https://flatmates.com.au', {
 	  params.keywordInput,
 	  params.wholeProperties,
 	  params.studios,
-	  params.oneBeds,
 	  params.grannyFlats,
 	  params.studentAccommodation,
 	  params.homestays,

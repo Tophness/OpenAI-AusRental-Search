@@ -376,97 +376,97 @@ paths:
           schema:
             type: string
           required: false
-          description: The locations of the rental properties, formatted as suburb-postcode. Extras added with a + in between. e.g. "penrith-2750+parramatta-2150"
+          description: Locations required, formatted as suburb-postcode. Extras added with a + in between. e.g. "penrith-2750+parramatta-2150"
         - in: query
           name: page
           schema:
             type: string
           required: false
-          description: The page number to request
+          description: page number to request
         - in: query
           name: bathroomType
           schema:
             type: string
           required: false
-          description: The type of bathroom in the rental property. Options are "ensuite-or-own" or "ensuite"
+          description: Type of bathroom required. Options are "ensuite-or-own" or "ensuite"
         - in: query
           name: furnishings
           schema:
             type: string
           required: false
-          description: The furnishings of the rental property. Options are "furnished" or "unfurnished"
+          description: Furnishings required. Options are "furnished" or "unfurnished"
         - in: query
           name: parking
           schema:
             type: string
           required: false
-          description: The parking requirements for the rental property. Options are "off-street-parking", "on-street-parking" or "no-parking"
+          description: Parking requirements. Options are "off-street-parking", "on-street-parking" or "no-parking"
         - in: query
           name: gender
           schema:
             type: string
           required: false
-          description: The gender preference for the rental property. Options are "males", "females" or "couples"
+          description: Gender preference required. Options are "males", "females" or "couples"
         - in: query
           name: allFemale
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is all-female
+          description: Whether all female tenants are required
         - in: query
           name: lengthOfStay
           schema:
             type: string
           required: false
-          description: The desired length of stay in weeks, months or years. e.g. "1 year"
+          description: Desired length of stay in weeks, months or years. e.g. "1 year"
         - in: query
           name: lgbtFriendly
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is LGBT-friendly
+          description: Whether LGBT-friendly tenants are required
         - in: query
           name: retirees
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is suitable for retirees
+          description: Whether the property is suitable for retirees
         - in: query
           name: students
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is suitable for students
+          description: Whether the property is suitable for students
         - in: query
           name: smokers
           schema:
             type: boolean
           required: false
-          description: Whether the rental property allows smoking
+          description: Whether the property allows smoking
         - in: query
           name: backpackers
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is suitable for backpackers
+          description: Whether the property is suitable for backpackers
         - in: query
           name: children
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is suitable for children
+          description: Whether the property is suitable for children
         - in: query
           name: over40
           schema:
             type: boolean
           required: false
-          description: Whether the rental property is suitable for people over 40
+          description: Whether the property is suitable for people over 40
         - in: query
           name: pets
           schema:
             type: boolean
           required: false
-          description: Whether the rental property allows pets
+          description: Whether the property allows pets
         - in: query
           name: numberOfRooms
           schema:
@@ -484,73 +484,67 @@ paths:
           schema:
             type: boolean
           required: false
-          description: Whether to include share houses in the rental properties
+          description: Whether to include share houses in the listings
         - in: query
           name: dateAvailable
           schema:
             type: string
           required: false
-          description: The date the rental property is available, formatted as day-month-year. e.g. "03-06-2023"
+          description: Date the rental property is available, formatted as day-month-year. e.g. "03-06-2023"
         - in: query
           name: minBudget
           schema:
             type: string
           required: false
-          description: The minimum budget for the rental property
+          description: Minimum price for the property
         - in: query
           name: maxBudget
           schema:
             type: string
           required: false
-          description: The maximum budget for the rental property
+          description: Maximum price for the property
         - in: query
           name: billsIncluded
           schema:
             type: boolean
           required: false
-          description: Whether bills are included in the price of the rental property
+          description: Whether bills are included in the price
         - in: query
           name: keywordInput
           schema:
             type: string
           required: false
-          description: Keywords for the rental property search
+          description: Keywords to search in listing descriptions
         - in: query
           name: wholeProperties
           schema:
             type: boolean
           required: false
-          description: Whether to include whole properties in the search
+          description: Whether to include whole properties
         - in: query
           name: studios
           schema:
             type: boolean
           required: false
-          description: Whether to include studios in the search
-        - in: query
-          name: oneBeds
-          schema:
-            type: boolean
-          required: false
-          description: Whether to include 1-bedroom properties in the search
+          description: Whether to include studios
         - in: query
           name: grannyFlats
           schema:
             type: boolean
           required: false
-          description: Whether to include granny flats in the search
+          description: Whether to include granny flats
         - in: query
           name: studentAccommodation
           schema:
             type: boolean
           required: false
-          description: Whether to include student accommodations in the search
+          description: Whether to include student accommodations
         - in: query
           name: homestays
           schema:
             type: boolean
           required: false
-          description: Whether to include homestays in the search
+          description: Whether to include homestays
         - in: query
           name: images
           schema:
