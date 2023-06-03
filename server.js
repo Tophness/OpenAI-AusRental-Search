@@ -376,6 +376,7 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
 		   if(trimmedData[id].listingModel.address.street && trimmedData[id].listingModel.address.suburb && trimmedData[id].listingModel.address.state && trimmedData[id].listingModel.address.postcode){
 		     trimmedData[id].listingModel.address = `${trimmedData[id].listingModel.address.street}, ${trimmedData[id].listingModel.address.suburb}, ${trimmedData[id].listingModel.address.state} ${trimmedData[id].listingModel.address.postcode}`;
 		   }
+		   delete trimmedData[id].features.propertyType;
          }
         }
         if (imgParam) {
