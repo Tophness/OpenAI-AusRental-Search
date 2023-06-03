@@ -188,6 +188,12 @@ paths:
           required: true
           description: A type of property the user is looking for. Options are house, apartment, townhouse, villa, unit or all. Default is all
         - in: query
+          name: searchLocation
+          schema:
+            type: string
+          required: true
+          description: Location user is searching for properties in. Can be suburb, postcode, state or any combination separated by commas. Default is "Penrith, NSW"
+        - in: query
           name: minBedrooms
           schema:
             type: number
@@ -205,12 +211,6 @@ paths:
             type: number
           required: false
           description: Minimum number of parking spaces user is searching for
-        - in: query
-          name: searchLocation
-          schema:
-            type: string
-          required: false
-          description: Location user is searching for properties in. Can be suburb, postcode, state or any combination separated by commas. Default is "Penrith, NSW"
         - in: query
           name: pageSize
           schema:
