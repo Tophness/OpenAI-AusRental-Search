@@ -363,9 +363,6 @@ app.use('/realestate', proxy('https://services.realestate.com.au/services/listin
 				   delete trimmedData[id].price;
 			   }
 		     }
-			 else{
-				 console.log(trimmedData[id]);
-			 }
 			 trimmedData[id].address = `${trimmedData[id].address.streetAddress}, ${trimmedData[id].address.suburb}, ${trimmedData[id].address.state} ${trimmedData[id].address.postcode || trimmedData[id].address.postCode}`;
 		   }
 		   catch(e){
