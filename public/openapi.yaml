@@ -500,6 +500,7 @@ components:
                 type: string
               price:
                 type: string
+                description: price of the listing. pw means per week
               propertyType:
                 type: string
               nextInspectionTime:
