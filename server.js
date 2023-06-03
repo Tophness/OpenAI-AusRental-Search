@@ -167,7 +167,7 @@ function extractFlatmatesListingInfo(obj, n) {
   };
 }
 
-function generateFlatmatesURL(baseUrl,locations,bathroomType,furnishings,parking,gender,lengthOfStay,allFemale,lgbtFriendly,retirees,students,smokers,backpackers,children,over40,pets,numberOfRooms,room,dateAvailable,minBudget,maxBudget,billsIncluded,keywordInput,wholeProperties,studios,oneBeds,grannyFlats,studentAccommodation,homestays,shareHouses) {
+function generateFlatmatesURL(baseUrl,locations,bathroomType,furnishings,parking,gender,lengthOfStay,allFemale,lgbtFriendly,retirees,students,smokers,backpackers,children,over40,pets,numberOfRooms,room,dateAvailable,minBudget,maxBudget,billsIncluded,keywordInput,wholeProperties,studios,oneBeds,grannyFlats,studentAccommodation,homestays,shareHouses,page) {
   let url = baseUrl + locations + "/";
   
   if (numberOfRooms > 1) {
@@ -288,7 +288,7 @@ function generateFlatmatesURL(baseUrl,locations,bathroomType,furnishings,parking
   if(url.endsWith('+')){
     url.slice(0, -1);
   }
-  url += "?search_source=search_function";
+  url += "?page=" + page;
   
   return url;
 }
@@ -625,7 +625,7 @@ app.use('/flatmates', proxy('https://flatmates.com.au', {
     proxyReqOpts.headers["Content-Type"] = "application/x-www-form-urlencoded";
     proxyReqOpts.headers["Origin"] = "https://flatmates.com.au";
     proxyReqOpts.headers["Referer"] = "https://flatmates.com.au";
-    proxyReqOpts.method = 'POST';
+    proxyReqOpts.method = 'GET';
     const params = extractUrlParameters(srcReq.url.replace('/?',''));
     const flatmatesURL = generateFlatmatesURL(
 	  'https://flatmates.com.au/rooms/',
@@ -657,7 +657,8 @@ app.use('/flatmates', proxy('https://flatmates.com.au', {
 	  params.grannyFlats,
 	  params.studentAccommodation,
 	  params.homestays,
-	  params.shareHouses
+	  params.shareHouses,
+	  params.page
 	);
 	srcReq.url = flatmatesURL;
     return proxyReqOpts;

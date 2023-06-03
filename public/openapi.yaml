@@ -378,6 +378,12 @@ paths:
           required: false
           description: The locations of the rental properties, formatted as suburb-postcode. Extras added with a + in between. e.g. "penrith-2750+parramatta-2150"
         - in: query
+          name: page
+          schema:
+            type: string
+          required: false
+          description: The page number to request
+        - in: query
           name: bathroomType
           schema:
             type: string
