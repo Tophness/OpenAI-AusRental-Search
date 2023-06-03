@@ -86,7 +86,7 @@ paths:
           schema:
             type: string
           required: false
-          description: Set to 1 to include surrounding suburbs, or 0 do only use the exact suburbs entered
+          description: Set to 1 to include surrounding suburbs, or 0 to only use the exact suburbs entered
         - in: query
           name: rent_low
           schema:
