@@ -376,7 +376,7 @@ paths:
           schema:
             type: string
           required: false
-          description: The location of the rental property, formatted as suburb-postcode. e.g. "penrith-2750"
+          description: The locations of the rental properties, formatted as suburb-postcode. Extras added with a + in between. e.g. "penrith-2750+parramatta-2150"
         - in: query
           name: bathroomType
           schema:
@@ -394,7 +394,7 @@ paths:
           schema:
             type: string
           required: false
-          description: The parking requirements for the rental property. Options are "off-street-parking" or "on-street-parking"
+          description: The parking requirements for the rental property. Options are "off-street-parking", "on-street-parking" or "no-parking"
         - in: query
           name: gender
           schema:
