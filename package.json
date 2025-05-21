@@ -1,0 +1,13 @@
+{
+  "name": "openai-ausrental-search",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-http-proxy": "^2.1.1",
+    "cheerio": "^1.0.0"
+  }
+}
