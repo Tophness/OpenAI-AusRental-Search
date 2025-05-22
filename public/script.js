@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const PROXY_BASE_URL = 'https://openai-ausrental-search-d3ys.onrender.com';
 
     // --- UI Elements ---
-	const filterPropertyTypeSelect = document.getElementById('filter-property-type');
+	const filterPropertyTypeExcludeSelect = document.getElementById('filter-property-type-exclude');
     const tabs = document.querySelectorAll('.tab-link');
     const tabContents = document.querySelectorAll('.tab-content');
     const loadingMessageDiv = document.getElementById('loading-message'); // Updated ID
@@ -62,8 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
         errorDiv.style.display = 'none';
         loadingMessageDiv.style.display = 'none';
         clientSideCurrentPage = 1;
-		filterPropertyTypeSelect.innerHTML = '<option value="">All Types</option>';
-		filterPropertyTypeSelect.value = "";
+		filterPropertyTypeExcludeSelect.innerHTML = '';
+		Array.from(filterPropertyTypeExcludeSelect.options).forEach(option => option.selected = false);
     }
 
     // --- Form Submission ---
@@ -77,14 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Event Listeners for Filters and Sort ---
-	filterPropertyTypeSelect.addEventListener('change', processAndDisplayListings);
+	filterPropertyTypeExcludeSelect.addEventListener('change', processAndDisplayListings);
     filterAddressInput.addEventListener('input', debounce(processAndDisplayListings, 500));
     filterDescriptionInput.addEventListener('input', debounce(processAndDisplayListings, 500));
     sortResultsSelect.addEventListener('change', processAndDisplayListings);
 
 
-	function populateAndSetPropertyTypeFilter(apiSource, listings) {
-		filterPropertyTypeSelect.innerHTML = '<option value="">All Types</option>'; // Clear existing and add default "All"
+	function populatePropertyTypeExcludeFilter(apiSource, listings) {
+		filterPropertyTypeExcludeSelect.innerHTML = '';
 		const availableTypes = new Set();
 
 		listings.forEach(listing => {
@@ -100,15 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
 					type = listing.propertyType;
 					break;
 				case 'flatmates':
-					// Flatmates doesn't have a direct "property type" like the others in its listings.
-					// It has "rooms" (e.g., "Private room in share house") or categories like "Whole property".
-					// You might need to infer or map these if you want a similar filter.
-					// For now, we'll skip populating from Flatmates data directly for simplicity.
-					// You could add predefined options for Flatmates if desired (e.g. "Share House", "Studio", "Whole Property")
-					// and then filter based on keywords in listing.rooms or other fields.
 					if (listing.rooms?.toLowerCase().includes('share house')) type = 'Share House';
 					else if (listing.rooms?.toLowerCase().includes('studio')) type = 'Studio';
-					// Add more mappings for flatmates if needed
+					else if (listing.rooms?.toLowerCase().includes('whole property')) type = 'Whole Property';
+					else if (listing.rooms?.toLowerCase().includes('granny flat')) type = 'Granny Flat';
 					break;
 			}
 			if (type && typeof type === 'string' && type.trim() !== '') {
@@ -116,9 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 
-		// Add predefined types if the API is Flatmates and no dynamic types were found
 		if (apiSource === 'flatmates' && availableTypes.size === 0) {
-			['Share House', 'Studio', 'Whole Property', 'Granny Flat'].forEach(t => availableTypes.add(t));
+			['Share House', 'Studio', 'Whole Property', 'Granny Flat', 'Homestay', 'Student Accommodation'].forEach(t => availableTypes.add(t));
 		}
 
 
@@ -126,32 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
 			const option = document.createElement('option');
 			option.value = type;
 			option.textContent = type;
-			filterPropertyTypeSelect.appendChild(option);
+			// option.selected = false; // By default, nothing is selected for exclusion
+			filterPropertyTypeExcludeSelect.appendChild(option);
 		});
 
-		// Set default for Domain
-		if (apiSource === 'domain') {
-			const defaultDomainType = "Acreage / Semi-Rural";
-			// Check if the default type is in the dynamically populated options
-			let foundDefault = false;
-			for (let i = 0; i < filterPropertyTypeSelect.options.length; i++) {
-				if (filterPropertyTypeSelect.options[i].value === defaultDomainType) {
-					filterPropertyTypeSelect.value = defaultDomainType;
-					foundDefault = true;
-					break;
-				}
-			}
-			// If the default type wasn't found in results, add it and select it
-			if (!foundDefault) {
-				const option = document.createElement('option');
-				option.value = defaultDomainType;
-				option.textContent = defaultDomainType;
-				filterPropertyTypeSelect.appendChild(option); // Add it to the end
-				filterPropertyTypeSelect.value = defaultDomainType; // Then select it
-			}
-		} else {
-			filterPropertyTypeSelect.value = ""; // Default to "All Types" for others
-		}
+		filterPropertyTypeExcludeSelect.value = ["Acreage / Semi-Rural"];
 	}
 
     // --- Main Data Fetching and Processing Logic ---
@@ -275,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetchAndScrapeDescriptions(allFetchedListings, currentApiSource);
             }
 
-			populateAndSetPropertyTypeFilter(currentApiSource, allFetchedListings);
+			populatePropertyTypeExcludeFilter(currentApiSource, allFetchedListings);
             processAndDisplayListings();
 
         } catch (error) {
@@ -446,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-		if (selectedPropertyType && selectedPropertyType !== "") {
+		if (selectedTypesToExclude.length > 0) {
 			currentProcessedListings = currentProcessedListings.filter(listing => {
 				let type = '';
 				switch (listing.original_api_source) {
@@ -460,13 +433,13 @@ document.addEventListener('DOMContentLoaded', () => {
 						type = listing.propertyType;
 						break;
 					case 'flatmates':
-						if (selectedPropertyType === 'Share House' && listing.rooms?.toLowerCase().includes('share house')) return true;
-						if (selectedPropertyType === 'Studio' && listing.rooms?.toLowerCase().includes('studio')) return true;
-						if (selectedPropertyType === 'Whole Property' && listing.rooms?.toLowerCase().includes('whole property')) return true;
-						if (selectedPropertyType === 'Granny Flat' && listing.rooms?.toLowerCase().includes('granny flat')) return true;
-						return false;
+						if (selectedTypesToExclude.includes('Share House') && listing.rooms?.toLowerCase().includes('share house')) return false;
+						if (selectedTypesToExclude.includes('Studio') && listing.rooms?.toLowerCase().includes('studio')) return false;
+						if (selectedTypesToExclude.includes('Whole Property') && listing.rooms?.toLowerCase().includes('whole property')) return false;
+						if (selectedTypesToExclude.includes('Granny Flat') && listing.rooms?.toLowerCase().includes('granny flat')) return false;
+						return true; 
 				}
-				return type && type.trim() === selectedPropertyType;
+				return type && typeof type === 'string' ? !selectedTypesToExclude.includes(type.trim()) : true;
 			});
 		}
         
