@@ -255,3 +255,23 @@ button[type="submit"]:hover {
     border-radius: 4px;
     font-size: 0.95em;
 }
+
+.description-html-content {
+    margin-top: 10px;
+    font-size: 0.95em;
+    line-height: 1.5;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #f0f0f0;
+    padding: 8px;
+    background-color: #fdfdfd;
+}
+
+.description-html-content p {
+    margin-bottom: 0.5em;
+}
+
+.description-html-content strong,
+.description-html-content b {
+    font-weight: 600;
+}

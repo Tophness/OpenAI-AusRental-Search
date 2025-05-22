@@ -386,101 +386,125 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function renderClientSidePage() {
-        resultsContainer.innerHTML = '';
-        if (processedListings.length === 0) {
-            resultsContainer.innerHTML = '<p>No listings match your criteria after filtering.</p>';
-            return;
-        }
+	function renderClientSidePage() {
+		resultsContainer.innerHTML = '';
+		if (processedListings.length === 0) {
+			resultsContainer.innerHTML = '<p>No listings match your criteria after filtering.</p>';
+			return;
+		}
 
-        const startIndex = (clientSideCurrentPage - 1) * CLIENT_SIDE_ITEMS_PER_PAGE;
-        const endIndex = startIndex + CLIENT_SIDE_ITEMS_PER_PAGE;
-        const pageListings = processedListings.slice(startIndex, endIndex);
+		const startIndex = (clientSideCurrentPage - 1) * CLIENT_SIDE_ITEMS_PER_PAGE;
+		const endIndex = startIndex + CLIENT_SIDE_ITEMS_PER_PAGE;
+		const pageListings = processedListings.slice(startIndex, endIndex);
 
-        pageListings.forEach(listing => {
-            const card = document.createElement('div');
-            card.classList.add('listing-card');
-            let imagesHtml = '<div class="listing-images">';
-            let listingUrl = '#';
-            let titleAddress = 'N/A';
-            let price = 'N/A';
-            let baseDescription = ''; // Original description from API if any
-            let detailedDescription = listing.scraped_description || ''; // Scraped one
+		pageListings.forEach(listing => {
+			const card = document.createElement('div');
+			card.classList.add('listing-card');
+			let imagesHtml = '<div class="listing-images">';
+			let listingUrl = '#';
+			let titleAddress = 'N/A';
+			let price = 'N/A';
+			let baseDescriptionFromApi = ''; // Original description from API if any
+			let scrapedHtmlDescription = listing.scraped_description || ''; // Scraped one
 
-            // Adapt to different API response structures
-            if (listing.original_api_source === 'domain') {
-                titleAddress = listing.address || 'Address not available';
-                listingUrl = listing.url ? `https://www.domain.com.au${listing.url}` : '#';
-                price = listing.price || 'Price on application';
-                if (listing.images && listing.images.length > 0) {
-                    (listing.images || []).forEach(img => imagesHtml += `<img src="${img.url || img}" alt="Property image">`);
-                }
-                baseDescription = listing.inspection?.openTime ? `Inspection: ${listing.inspection.openTime} - ${listing.inspection.closeTime}` : (listing.headline || '');
-            } else if (listing.original_api_source === 'rentdc') {
-                titleAddress = listing.address || 'Address not available';
-                listingUrl = listing.url ? `https://www.rent.com.au${listing.url}` : '#';
-                price = listing.price || 'Price on application';
-                if (listing.imageUrl) { imagesHtml += `<img src="${listing.imageUrl}" alt="Property image">`; }
-                baseDescription = listing.description || ''; // RentDC already had a description field
-            } else if (listing.original_api_source === 'realestate') {
-                titleAddress = listing.address || 'Address not available';
-                listingUrl = listing.prettyUrl ? `https://www.realestate.com.au${listing.prettyUrl}` : '#';
-                price = listing.price || 'Price on application';
-                if (listing.images && listing.images.length > 0) {
-                    (listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
-                }
-                baseDescription = listing.description || '';
-                // Add REA specific details if needed
-            } else if (listing.original_api_source === 'flatmates') {
-                titleAddress = listing.address || 'Address not available';
-                listingUrl = listing.url ? `https://flatmates.com.au${listing.url}` : '#';
-                price = listing.price || 'Price on application';
-                if (listing.billsIncluded) price += ' (bills incl.)';
-                if (listing.images && listing.images.length > 0) {
-                    (listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
-                }
-                baseDescription = listing.description || '';
-            }
-            
-            imagesHtml += '</div>';
+			// --- Features HTML ---
+			let featuresHtml = '<ul class="listing-features">'; // Start features list
 
-            // Use scraped description if available, otherwise API's (potentially truncated)
-            const displayDescription = detailedDescription || baseDescription;
-            // For display, use innerText to avoid rendering raw HTML from scrape, unless you trust it or sanitize it
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = displayDescription; // Render HTML to get text content
-            const cleanTextDescription = tempDiv.textContent || tempDiv.innerText || "";
+			if (listing.original_api_source === 'domain') {
+				titleAddress = listing.address || 'Address not available';
+				listingUrl = listing.url ? `https://www.domain.com.au${listing.url}` : '#';
+				price = listing.price || 'Price on application';
+				if (listing.images && listing.images.length > 0) {
+					(listing.images || []).forEach(img => imagesHtml += `<img src="${img.url || img}" alt="Property image">`);
+				}
+				baseDescriptionFromApi = listing.inspection?.openTime ? `Inspection: ${listing.inspection.openTime} - ${listing.inspection.closeTime}` : (listing.headline || '');
+				
+				// Domain features
+				if (listing.features) {
+					if (listing.features.beds !== undefined) featuresHtml += `<li>Beds: ${listing.features.beds}</li>`;
+					if (listing.features.baths !== undefined) featuresHtml += `<li>Baths: ${listing.features.baths}</li>`;
+					if (listing.features.propertyTypeFormatted) featuresHtml += `<li>Type: ${listing.features.propertyTypeFormatted}</li>`;
+				}
+
+			} else if (listing.original_api_source === 'rentdc') {
+				titleAddress = listing.address || 'Address not available';
+				listingUrl = listing.url ? `https://www.rent.com.au${listing.url}` : '#';
+				price = listing.price || 'Price on application';
+				if (listing.imageUrl) { imagesHtml += `<img src="${listing.imageUrl}" alt="Property image">`; }
+				baseDescriptionFromApi = listing.description || ''; 
+
+				// RentDC features
+				if (listing.features && Array.isArray(listing.features) && listing.features.length > 0) {
+					listing.features.forEach(f => featuresHtml += `<li>${f}</li>`);
+				}
+				if(listing.propType) featuresHtml += `<li>Type: ${listing.propType}</li>`;
 
 
-            card.innerHTML = `
-                <h3><a href="${listingUrl}" target="_blank" rel="noopener noreferrer">${titleAddress}</a></h3>
-                <p><strong>Price:</strong> ${price}</p>
-                ${imagesHtml}
-                ${listing.features ? `<p>Features: ${formatFeatures(listing.features, listing.original_api_source)}</p>` : ''}
-                ${cleanTextDescription ? `<p class="description">${cleanTextDescription.substring(0, 300)}${cleanTextDescription.length > 300 ? '...' : ''}</p>` : '<p>No description available.</p>'}
-            `;
-            resultsContainer.appendChild(card);
-        });
-    }
-    
-    function formatFeatures(featuresData, apiSource) {
-        if (!featuresData) return 'N/A';
-        if (apiSource === 'domain') {
-            return `Beds: ${featuresData.beds || 'N/A'}, Baths: ${featuresData.baths || 'N/A'}${featuresData.propertyTypeFormatted ? ', Type: ' + featuresData.propertyTypeFormatted : ''}`;
-        } else if (apiSource === 'rentdc') {
-            return (Array.isArray(featuresData) ? featuresData.join(', ') : 'N/A') + (featuresData.propType ? `, Type: ${featuresData.propType}` : '');
-        } else if (apiSource === 'realestate') {
-             return (Array.isArray(featuresData.propertyFeatures) ? featuresData.propertyFeatures.join(', ') : 'N/A') + (featuresData.propertyType ? `, Type: ${featuresData.propertyType}` : '');
-        } else if (apiSource === 'flatmates') {
-            let str = '';
-            if (featuresData.bedrooms) str += `Beds: ${featuresData.bedrooms}, `;
-            if (featuresData.bathrooms) str += `Baths: ${featuresData.bathrooms}, `;
-            if (featuresData.occupants) str += `Occupants: ${featuresData.occupants}, `;
-            if (featuresData.rooms) str += `Rooms: ${featuresData.rooms}`;
-            return str.replace(/, $/, ''); // Remove trailing comma
-        }
-        return JSON.stringify(featuresData); // Fallback
-    }
+			} else if (listing.original_api_source === 'realestate') {
+				titleAddress = listing.address || 'Address not available';
+				listingUrl = listing.prettyUrl ? `https://www.realestate.com.au${listing.prettyUrl}` : '#';
+				price = listing.price || 'Price on application';
+				if (listing.images && listing.images.length > 0) {
+					(listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
+				}
+				baseDescriptionFromApi = listing.description || '';
+				if(listing.bond) baseDescriptionFromApi += `<br><strong>Bond:</strong> ${listing.bond}`;
+				if(listing.dateAvailable) baseDescriptionFromApi += `<br><strong>Available:</strong> ${new Date(listing.dateAvailable).toLocaleDateString()}`;
+				if(listing.nextInspectionTime) baseDescriptionFromApi += `<br><strong>Inspection:</strong> ${new Date(listing.nextInspectionTime.startTime).toLocaleString()} - ${new Date(listing.nextInspectionTime.endTime).toLocaleString()}`;
+				
+				// Realestate.com.au features
+				if (listing.propertyFeatures && Array.isArray(listing.propertyFeatures) && listing.propertyFeatures.length > 0) {
+					listing.propertyFeatures.forEach(f => featuresHtml += `<li>${f}</li>`);
+				}
+				if(listing.propertyType) featuresHtml += `<li>Type: ${listing.propertyType}</li>`;
+
+
+			} else if (listing.original_api_source === 'flatmates') {
+				titleAddress = listing.address || 'Address not available';
+				listingUrl = listing.url ? `https://flatmates.com.au${listing.url}` : '#';
+				price = listing.price || 'Price on application';
+				if (listing.billsIncluded) price += ' (bills incl.)';
+				if (listing.images && listing.images.length > 0) {
+					(listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
+				}
+				baseDescriptionFromApi = listing.description || '';
+
+				// Flatmates features
+				if (listing.bedrooms !== undefined) featuresHtml += `<li>Beds: ${listing.bedrooms}</li>`;
+				if (listing.bathrooms !== undefined) featuresHtml += `<li>Baths: ${listing.bathrooms}</li>`;
+				if (listing.occupants !== undefined) featuresHtml += `<li>Occupants: ${listing.occupants}</li>`;
+				if (listing.rooms) featuresHtml += `<li>Rooms: ${listing.rooms}</li>`;
+			}
+			
+			imagesHtml += '</div>';
+			featuresHtml += '</ul>'; // End features list
+
+			// Use scraped HTML description if available, otherwise API's (which might also contain HTML)
+			const displayDescriptionHtml = scrapedHtmlDescription || baseDescriptionFromApi;
+			const descriptionLengthLimit = 300; // You can adjust this
+			let finalDescriptionHtml = displayDescriptionHtml;
+
+			// Simple truncation for HTML (could be more sophisticated to avoid breaking tags badly)
+			if (displayDescriptionHtml.length > descriptionLengthLimit) {
+				 // Find a space to break nicely, or just cut
+				let breakPoint = displayDescriptionHtml.lastIndexOf(' ', descriptionLengthLimit);
+				if (breakPoint === -1 || breakPoint < descriptionLengthLimit / 2) { // if no space or too early
+					breakPoint = descriptionLengthLimit;
+				}
+				finalDescriptionHtml = displayDescriptionHtml.substring(0, breakPoint) + '...';
+			}
+
+
+			card.innerHTML = `
+				<h3><a href="${listingUrl}" target="_blank" rel="noopener noreferrer">${titleAddress}</a></h3>
+				<p><strong>Price:</strong> ${price}</p>
+				${imagesHtml}
+				${featuresHtml} 
+				${finalDescriptionHtml ? `<div class="description-html-content">${finalDescriptionHtml}</div>` : '<p>No description available.</p>'}
+			`;
+			resultsContainer.appendChild(card);
+		});
+	}
 
 
     function setupClientSidePagination() {
