@@ -81,7 +81,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Main Data Fetching and Processing Logic ---
     async function fetchAllDataProcess() {
-        if (!initialFormData) return;
+        if (!initialFormData && document.getElementById(`${currentApiSource}-form`)) { // Check if initialFormData is set, if not, try to get it from current form
+            initialFormData = new FormData(document.getElementById(`${currentApiSource}-form`));
+        } else if (!initialFormData) { // If still no initialFormData (e.g. form doesn't exist, unlikely here)
+             showError("Form data is not available. Please submit a search.");
+             return;
+        }
+
 
         loadingMessageDiv.textContent = 'Fetching initial listings...';
         loadingMessageDiv.style.display = 'block';
@@ -94,7 +100,26 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             while (hasMorePages) {
                 loadingMessageDiv.textContent = `Fetching listings (API Page ${currentPageForApi})...`;
-                const formDataForPage = new FormData(initialFormData.entries().next().value ? initialFormData : document.getElementById(`${currentApiSource}-form`)); // Ensure fresh FormData if initial is empty (e.g. after tab switch and direct filter change)
+                
+                // --- CORRECTED FormData HANDLING ---
+                let formDataForPage;
+                if (initialFormData) {
+                    formDataForPage = new FormData(); // Create a new empty FormData
+                    // Copy entries from initialFormData
+                    for (const [key, value] of initialFormData.entries()) {
+                        formDataForPage.append(key, value);
+                    }
+                } else { 
+                    // This case should be less likely now due to the check at the beginning of the function,
+                    // but as a fallback, try to get it from the current form if initialFormData was somehow cleared.
+                    const currentFormElement = document.getElementById(`${currentApiSource}-form`);
+                    if (currentFormElement) {
+                        formDataForPage = new FormData(currentFormElement);
+                    } else {
+                        throw new Error("Could not retrieve form data for API request.");
+                    }
+                }
+                // --- END CORRECTED FormData HANDLING ---
                 
                 // Update page number for the API request
                 if (formDataForPage.has('page')) {
@@ -105,39 +130,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const apiResponse = await makeApiRequest(currentApiSource, formDataForPage);
 
-                if (!apiResponse || (Array.isArray(apiResponse.listings) && apiResponse.listings.length === 0 && currentApiSource !== 'domain') || (currentApiSource === 'domain' && Object.keys(apiResponse.listings || {}).length === 0 && currentPageForApi > 1) ) {
-                     if (currentApiSource === 'domain' && currentPageForApi === 1 && Object.keys(apiResponse.listings || {}).length === 0) {
-                        // Domain might return empty on page 1 if no results.
-                        // But if it's > page 1 and empty, means no more.
-                     } else {
-                        hasMorePages = false; // Stop if no listings are returned (and not first page for domain)
-                     }
-                }
-
+                // ... (rest of the while loop logic for processing apiResponse and determining hasMorePages)
+                // ... (This part from the previous correct answer should be fine)
 
                 let newPageListings = [];
                 switch (currentApiSource) {
                     case 'domain':
                         newPageListings = apiResponse.listings ? Object.values(apiResponse.listings).map(l => ({ ...l.listingModel, original_api_source: 'domain' })) : [];
                         hasMorePages = currentPageForApi < (apiResponse.totalPages || 1);
+                        if (currentPageForApi === 1 && newPageListings.length === 0 && (apiResponse.totalListings === 0 || Object.keys(apiResponse.listings || {}).length === 0)) {
+                            // If it's the first page and absolutely no results, stop.
+                            hasMorePages = false;
+                        }
                         break;
                     case 'rentdc':
                         newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'rentdc' }));
-                        hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / 20); // Assuming 20 per page for rentdc
-                        if (apiResponse.nextPageNum && apiResponse.nextPageNum <= currentPageForApi) hasMorePages = false; // another check
+                        hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / 20);
+                        if (apiResponse.nextPageNum && apiResponse.nextPageNum <= currentPageForApi) hasMorePages = false;
+                        if (currentPageForApi === 1 && newPageListings.length === 0 && apiResponse.totalListings === 0) {
+                            hasMorePages = false;
+                        }
                         break;
                     case 'realestate':
                         newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'realestate' }));
                         const pageSizeRea = parseInt(formDataForPage.get('pageSize') || '20');
                         hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / pageSizeRea);
+                         if (currentPageForApi === 1 && newPageListings.length === 0 && apiResponse.totalListings === 0) {
+                            hasMorePages = false;
+                        }
                         break;
                     case 'flatmates':
                         newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'flatmates' }));
-                        hasMorePages = !!apiResponse.nextPage; // Flatmates directly tells us if there's a next page
+                        hasMorePages = !!apiResponse.nextPage;
+                        if (currentPageForApi === 1 && newPageListings.length === 0 && !apiResponse.nextPage) { // if no listings on page 1 and no next page
+                            hasMorePages = false;
+                        }
                         break;
                 }
                 
-                if (newPageListings.length === 0 && currentPageForApi > 1) { // If not the first page and no listings, stop.
+                if (newPageListings.length === 0 && currentPageForApi > 1) { 
                      hasMorePages = false;
                 } else if (newPageListings.length > 0) {
                     listingsFromApi.push(...newPageListings);
@@ -149,15 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     break; 
                 }
-                 if (currentPageForApi > 50) { // Safety break for runaway loops
+                 if (currentPageForApi > 50) { 
                     console.warn("Safety break: Exceeded 50 pages for API fetch.");
                     hasMorePages = false;
                 }
-            }
+            } // End of while loop
             
             allFetchedListings = listingsFromApi;
 
-            // Now fetch descriptions if needed
+            if (allFetchedListings.length === 0) {
+                loadingMessageDiv.textContent = 'No listings found from the API.';
+                 // No need to fetch descriptions if no primary listings
+                processAndDisplayListings(); // This will show "No listings match..."
+                return; // Exit early
+            }
+
+
             if (currentApiSource === 'domain' || currentApiSource === 'rentdc') {
                 await fetchAndScrapeDescriptions(allFetchedListings, currentApiSource);
             }
@@ -168,7 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error in fetchAllDataProcess:', error);
             showError(`Failed during data fetching: ${error.message}`);
         } finally {
-            loadingMessageDiv.style.display = 'none';
+            if (allFetchedListings.length > 0) { // Only hide loading if we actually processed something
+                loadingMessageDiv.style.display = 'none';
+            }
         }
     }
     
