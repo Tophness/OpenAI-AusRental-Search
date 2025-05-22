@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const PROXY_BASE_URL = 'https://openai-ausrental-search-d3ys.onrender.com';
 
     // --- UI Elements ---
+	const filterPropertyTypeSelect = document.getElementById('filter-property-type');
     const tabs = document.querySelectorAll('.tab-link');
     const tabContents = document.querySelectorAll('.tab-content');
     const loadingMessageDiv = document.getElementById('loading-message'); // Updated ID
@@ -61,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
         errorDiv.style.display = 'none';
         loadingMessageDiv.style.display = 'none';
         clientSideCurrentPage = 1;
+		filterPropertyTypeSelect.innerHTML = '<option value="">All Types</option>';
+		filterPropertyTypeSelect.value = "";
     }
 
     // --- Form Submission ---
@@ -68,16 +71,88 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             clearResultsAndState();
-            initialFormData = new FormData(form); // Store the form data for reuse
+            initialFormData = new FormData(form);
             fetchAllDataProcess();
         });
     });
 
     // --- Event Listeners for Filters and Sort ---
+	filterPropertyTypeSelect.addEventListener('change', processAndDisplayListings);
     filterAddressInput.addEventListener('input', debounce(processAndDisplayListings, 500));
     filterDescriptionInput.addEventListener('input', debounce(processAndDisplayListings, 500));
     sortResultsSelect.addEventListener('change', processAndDisplayListings);
 
+
+	function populateAndSetPropertyTypeFilter(apiSource, listings) {
+		filterPropertyTypeSelect.innerHTML = '<option value="">All Types</option>'; // Clear existing and add default "All"
+		const availableTypes = new Set();
+
+		listings.forEach(listing => {
+			let type = '';
+			switch (apiSource) {
+				case 'domain':
+					type = listing.features?.propertyTypeFormatted;
+					break;
+				case 'rentdc':
+					type = listing.propType;
+					break;
+				case 'realestate':
+					type = listing.propertyType;
+					break;
+				case 'flatmates':
+					// Flatmates doesn't have a direct "property type" like the others in its listings.
+					// It has "rooms" (e.g., "Private room in share house") or categories like "Whole property".
+					// You might need to infer or map these if you want a similar filter.
+					// For now, we'll skip populating from Flatmates data directly for simplicity.
+					// You could add predefined options for Flatmates if desired (e.g. "Share House", "Studio", "Whole Property")
+					// and then filter based on keywords in listing.rooms or other fields.
+					if (listing.rooms?.toLowerCase().includes('share house')) type = 'Share House';
+					else if (listing.rooms?.toLowerCase().includes('studio')) type = 'Studio';
+					// Add more mappings for flatmates if needed
+					break;
+			}
+			if (type && typeof type === 'string' && type.trim() !== '') {
+				availableTypes.add(type.trim());
+			}
+		});
+
+		// Add predefined types if the API is Flatmates and no dynamic types were found
+		if (apiSource === 'flatmates' && availableTypes.size === 0) {
+			['Share House', 'Studio', 'Whole Property', 'Granny Flat'].forEach(t => availableTypes.add(t));
+		}
+
+
+		Array.from(availableTypes).sort().forEach(type => {
+			const option = document.createElement('option');
+			option.value = type;
+			option.textContent = type;
+			filterPropertyTypeSelect.appendChild(option);
+		});
+
+		// Set default for Domain
+		if (apiSource === 'domain') {
+			const defaultDomainType = "Acreage / Semi-Rural";
+			// Check if the default type is in the dynamically populated options
+			let foundDefault = false;
+			for (let i = 0; i < filterPropertyTypeSelect.options.length; i++) {
+				if (filterPropertyTypeSelect.options[i].value === defaultDomainType) {
+					filterPropertyTypeSelect.value = defaultDomainType;
+					foundDefault = true;
+					break;
+				}
+			}
+			// If the default type wasn't found in results, add it and select it
+			if (!foundDefault) {
+				const option = document.createElement('option');
+				option.value = defaultDomainType;
+				option.textContent = defaultDomainType;
+				filterPropertyTypeSelect.appendChild(option); // Add it to the end
+				filterPropertyTypeSelect.value = defaultDomainType; // Then select it
+			}
+		} else {
+			filterPropertyTypeSelect.value = ""; // Default to "All Types" for others
+		}
+	}
 
     // --- Main Data Fetching and Processing Logic ---
     async function fetchAllDataProcess() {
@@ -200,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetchAndScrapeDescriptions(allFetchedListings, currentApiSource);
             }
 
+			populateAndSetPropertyTypeFilter(currentApiSource, allFetchedListings);
             processAndDisplayListings();
 
         } catch (error) {
@@ -354,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Apply Filters
         const addressFilterTerms = filterAddressInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
         const descriptionFilterTerms = filterDescriptionInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+		const selectedPropertyType = filterPropertyTypeSelect.value;
 
         if (addressFilterTerms.length > 0) {
             currentProcessedListings = currentProcessedListings.filter(listing => {
@@ -368,6 +445,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 return !descriptionFilterTerms.some(term => description.includes(term));
             });
         }
+
+		if (selectedPropertyType && selectedPropertyType !== "") {
+			currentProcessedListings = currentProcessedListings.filter(listing => {
+				let type = '';
+				switch (listing.original_api_source) {
+					case 'domain':
+						type = listing.features?.propertyTypeFormatted;
+						break;
+					case 'rentdc':
+						type = listing.propType;
+						break;
+					case 'realestate':
+						type = listing.propertyType;
+						break;
+					case 'flatmates':
+						if (selectedPropertyType === 'Share House' && listing.rooms?.toLowerCase().includes('share house')) return true;
+						if (selectedPropertyType === 'Studio' && listing.rooms?.toLowerCase().includes('studio')) return true;
+						if (selectedPropertyType === 'Whole Property' && listing.rooms?.toLowerCase().includes('whole property')) return true;
+						if (selectedPropertyType === 'Granny Flat' && listing.rooms?.toLowerCase().includes('granny flat')) return true;
+						return false;
+				}
+				return type && type.trim() === selectedPropertyType;
+			});
+		}
         
         // 2. Apply Sorting
         const sortBy = sortResultsSelect.value;
