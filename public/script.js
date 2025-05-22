@@ -19,8 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State Variables ---
     let currentApiSource = 'domain';
-    let allFetchedListings = []; // Store all listings from all pages + descriptions
-    let processedListings = []; // Listings after filtering and sorting
+    let allFetchedListings = [];
+    let processedListings = [];
+	let lightboxOverlay = null;
+	let lightboxImageElement = null;
+	let lightboxPrevButton = null;
+	let lightboxNextButton = null;
+	let currentLightboxImages = [];
+	let currentLightboxImageIndex = 0;
     
     let clientSideCurrentPage = 1;
     const CLIENT_SIDE_ITEMS_PER_PAGE = 10; // Or make this configurable
@@ -82,6 +88,100 @@ document.addEventListener('DOMContentLoaded', () => {
     filterDescriptionInput.addEventListener('input', debounce(processAndDisplayListings, 500));
     sortResultsSelect.addEventListener('change', processAndDisplayListings);
 
+	function createLightbox() {
+		if (document.getElementById('image-lightbox-overlay')) return; // Already created
+
+		lightboxOverlay = document.createElement('div');
+		lightboxOverlay.id = 'image-lightbox-overlay';
+		lightboxOverlay.classList.add('lightbox-overlay');
+		lightboxOverlay.style.display = 'none'; // Start hidden
+
+		const content = document.createElement('div');
+		content.classList.add('lightbox-content');
+
+		lightboxImageElement = document.createElement('img');
+		lightboxImageElement.classList.add('lightbox-image');
+		lightboxImageElement.alt = 'Full screen property image';
+
+		const closeButton = document.createElement('button');
+		closeButton.classList.add('lightbox-close');
+		closeButton.innerHTML = '×'; // '×' character
+		closeButton.title = 'Close (Esc)';
+		closeButton.onclick = closeLightbox;
+
+		lightboxPrevButton = document.createElement('button');
+		lightboxPrevButton.classList.add('lightbox-nav', 'lightbox-prev');
+		lightboxPrevButton.innerHTML = '❮'; // '❮'
+		lightboxPrevButton.title = 'Previous (Left Arrow)';
+		lightboxPrevButton.onclick = () => showLightboxImage(currentLightboxImageIndex - 1);
+
+		lightboxNextButton = document.createElement('button');
+		lightboxNextButton.classList.add('lightbox-nav', 'lightbox-next');
+		lightboxNextButton.innerHTML = '❯'; // '❯'
+		lightboxNextButton.title = 'Next (Right Arrow)';
+		lightboxNextButton.onclick = () => showLightboxImage(currentLightboxImageIndex + 1);
+
+		content.appendChild(lightboxImageElement);
+		content.appendChild(closeButton); // Append close button to content for better positioning relative to image
+		lightboxOverlay.appendChild(content); // Append content to overlay
+		lightboxOverlay.appendChild(lightboxPrevButton); // Nav buttons are children of overlay for edge positioning
+		lightboxOverlay.appendChild(lightboxNextButton);
+
+		document.body.appendChild(lightboxOverlay);
+
+		// Close lightbox if clicking on the overlay itself (but not on the content/image)
+		lightboxOverlay.addEventListener('click', function(event) {
+			if (event.target === lightboxOverlay) {
+				closeLightbox();
+			}
+		});
+	}
+
+	function openLightbox(imagesArray, startIndex) {
+		if (!lightboxOverlay) createLightbox();
+
+		currentLightboxImages = imagesArray;
+		currentLightboxImageIndex = startIndex;
+		
+		showLightboxImage(currentLightboxImageIndex);
+		lightboxOverlay.style.display = 'flex';
+		document.addEventListener('keydown', handleLightboxKeyDown);
+		document.body.style.overflow = 'hidden';
+	}
+
+	function showLightboxImage(index) {
+		if (!currentLightboxImages || currentLightboxImages.length === 0) return;
+
+		currentLightboxImageIndex = (index + currentLightboxImages.length) % currentLightboxImages.length;
+		lightboxImageElement.src = currentLightboxImages[currentLightboxImageIndex];
+
+		// Show/hide nav buttons
+		if (currentLightboxImages.length <= 1) {
+			lightboxPrevButton.classList.add('hidden');
+			lightboxNextButton.classList.add('hidden');
+		} else {
+			lightboxPrevButton.classList.remove('hidden');
+			lightboxNextButton.classList.remove('hidden');
+		}
+	}
+
+	function closeLightbox() {
+		if (lightboxOverlay) {
+			lightboxOverlay.style.display = 'none';
+		}
+		document.removeEventListener('keydown', handleLightboxKeyDown);
+		document.body.style.overflow = '';
+	}
+
+	function handleLightboxKeyDown(event) {
+		if (event.key === 'Escape') {
+			closeLightbox();
+		} else if (event.key === 'ArrowLeft') {
+			showLightboxImage(currentLightboxImageIndex - 1);
+		} else if (event.key === 'ArrowRight') {
+			showLightboxImage(currentLightboxImageIndex + 1);
+		}
+	}
 
 	function populatePropertyTypeExcludeFilter(apiSource, listings) {
 		filterPropertyTypeExcludeSelect.innerHTML = '';
@@ -600,11 +700,42 @@ document.addEventListener('DOMContentLoaded', () => {
 			card.innerHTML = `
 				<h3><a href="${listingUrl}" target="_blank" rel="noopener noreferrer">${titleAddress}</a></h3>
 				<p><strong>Price:</strong> ${price}</p>
-				${imagesHtml}
+				<div class="listing-images-container">${imagesHtml}</div>
 				${featuresHtml} 
 				${finalDescriptionHtml ? `<div class="description-html-content">${finalDescriptionHtml}</div>` : '<p>No description available.</p>'}
 			`;
 			resultsContainer.appendChild(card);
+            const imageElements = card.querySelectorAll('.listing-images-container img');
+            const allImageUrlsForThisListing = [];
+            if (listing.images && Array.isArray(listing.images)) {
+                listing.images.forEach(imgData => {
+                    if (typeof imgData === 'string') {
+                        allImageUrlsForThisListing.push(imgData);
+                    } else if (imgData && (imgData.url || typeof imgData === 'string')) {
+                        allImageUrlsForThisListing.push(imgData.url || imgData);
+                    } else if (imgData && imgData.server && imgData.uri) {
+                         allImageUrlsForThisListing.push(imgData.server + imgData.uri);
+                    }
+                });
+            } else if (listing.imageUrl && typeof listing.imageUrl === 'string') {
+                allImageUrlsForThisListing.push(listing.imageUrl);
+            }
+            const validImageUrls = allImageUrlsForThisListing.filter(url => url && typeof url === 'string');
+
+
+            imageElements.forEach((imgElement, index) => {
+                imgElement.style.cursor = 'pointer';
+                imgElement.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const clickedSrc = imgElement.getAttribute('src');
+                    let clickedImageIndex = validImageUrls.findIndex(url => url === clickedSrc);
+                    if (clickedImageIndex === -1) clickedImageIndex = 0;
+
+                    if (validImageUrls.length > 0) {
+                        openLightbox(validImageUrls, clickedImageIndex);
+                    }
+                });
+            });
 		});
 	}
 
