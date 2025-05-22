@@ -292,22 +292,26 @@ button[type="submit"]:hover {
     box-sizing: border-box;
 }
 
+.lightbox-image {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 5px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+
 .lightbox-content {
     position: relative;
-    max-width: 90vw; /* Max width relative to viewport width */
-    max-height: 90vh; /* Max height relative to viewport height */
+    max-width: 90vw; 
+    max-height: 90vh; 
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.lightbox-image {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* Scale image down to fit, preserving aspect ratio */
-    border-radius: 5px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+    width: 100%;
+    height: 100%;
 }
 
 .lightbox-close {
