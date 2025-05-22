@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const PROXY_BASE_URL = 'https://openai-ausrental-search-d3ys.onrender.com/';
+    const PROXY_BASE_URL = 'https://openai-ausrental-search-d3ys.onrender.com';
 
     const tabs = document.querySelectorAll('.tab-link');
     const tabContents = document.querySelectorAll('.tab-content');
