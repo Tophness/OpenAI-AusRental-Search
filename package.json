@@ -8,6 +8,7 @@
   "dependencies": {
     "express": "^5.1.0",
     "express-http-proxy": "^2.1.1",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5"
   }
 }
