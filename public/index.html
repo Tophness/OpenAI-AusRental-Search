@@ -25,7 +25,7 @@
             </div>
             <div class="filter-group">
                 <label for="filter-description">Filter Descriptions (comma-sep, hides if match):</label>
-                <input type="text" id="filter-description" value="room">
+                <input type="text" id="filter-description" value="room for rent,boarding house">
             </div>
             <div class="sort-group">
                 <label for="sort-results">Sort by:</label>
@@ -43,14 +43,14 @@
             <form id="domain-form">
                 <!-- Form fields as before -->
                 <div class="form-grid">
-                    <div><label for="domain-suburb">Suburbs (suburb-state-postcode, comma-separated):</label><input type="text" id="domain-suburb" name="suburb" placeholder="chatswood-nsw-2067,gordon-nsw-2072"></div>
-                    <div><label for="domain-bedrooms">Bedrooms (e.g., 2 or 2-4, 1-any):</label><input type="text" id="domain-bedrooms" name="bedrooms" placeholder="2-3"></div>
-                    <div><label for="domain-price">Price (e.g., 500 or 200-500):</label><input type="text" id="domain-price" name="price" placeholder="400-600"></div>
+                    <div><label for="domain-suburb">Suburbs (suburb-state-postcode, comma-separated):</label><input type="text" id="domain-suburb" name="suburb" placeholder="chatswood-nsw-2067,gordon-nsw-2072", value="sydney-region-nsw"></div>
+                    <div><label for="domain-bedrooms">Bedrooms (e.g., 2 or 2-4, 1-any):</label><input type="text" id="domain-bedrooms" name="bedrooms" placeholder="2-3" value="1"></div>
+                    <div><label for="domain-price">Price (e.g., 500 or 200-500):</label><input type="text" id="domain-price" name="price" placeholder="400-600" value="150-300"></div>
                     <div><label for="domain-features">Features (comma-separated):</label><input type="text" id="domain-features" name="features" placeholder="petsallowed,airconditioning">
                         <small>Options: petsallowed, gas, builtinwardrobes, gardencourtyard, internallaundry, furnished, balconydeck, study, swimmingpool, airconditioning, secureparking, ensuite, heating, dishwasher</small>
                     </div>
                     <div><label for="domain-excludedeposittaken">Exclude Deposit Taken (1 for yes, 0 for no):</label><input type="number" id="domain-excludedeposittaken" name="excludedeposittaken" value="1" min="0" max="1"></div>
-                    <div><label for="domain-images">Number of Images (0 to disable):</label><input type="number" id="domain-images" name="images" value="2"></div>
+                    <div><label for="domain-images">Number of Images (0 to disable):</label><input type="number" id="domain-images" name="images" value="8"></div>
                     <input type="hidden" name="page" value="1">
                 </div>
                 <button type="submit">Search Domain</button>
