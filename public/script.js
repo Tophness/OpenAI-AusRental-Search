@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Apply Filters
         const addressFilterTerms = filterAddressInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
         const descriptionFilterTerms = filterDescriptionInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
-		const selectedPropertyType = filterPropertyTypeSelect.value;
+		const selectedTypesToExclude = Array.from(filterPropertyTypeExcludeSelect.selectedOptions).map(option => option.value);
 
         if (addressFilterTerms.length > 0) {
             currentProcessedListings = currentProcessedListings.filter(listing => {
