@@ -585,6 +585,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return isNaN(num) ? null : num;
     }
 
+	function formatDateTimeForDisplay(dateTimeString, timeOnlyIfSameDayAsFirst = false, firstDateTimeString = null) {
+		if (!dateTimeString) return '';
+		try {
+			const date = new Date(dateTimeString);
+			if (isNaN(date.getTime())) return dateTimeString; // Return original if invalid date
+
+			const options = {
+				weekday: 'short', // e.g., Mon
+				year: 'numeric',   // e.g., 2024
+				month: 'short',    // e.g., Jul
+				day: 'numeric',    // e.g., 23
+				hour: 'numeric',   // e.g., 2 PM
+				minute: '2-digit', // e.g., 05
+				hour12: true       // Use 12-hour clock
+			};
+
+			if (timeOnlyIfSameDayAsFirst && firstDateTimeString) {
+				const firstDate = new Date(firstDateTimeString);
+				if (!isNaN(firstDate.getTime()) &&
+					date.getFullYear() === firstDate.getFullYear() &&
+					date.getMonth() === firstDate.getMonth() &&
+					date.getDate() === firstDate.getDate()) {
+					// Same day, only show time
+					return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+				}
+			}
+			
+			// Default: show full date and time
+			return date.toLocaleString(undefined, options); // undefined uses browser's default locale
+		} catch (e) {
+			console.error("Error formatting date:", dateTimeString, e);
+			return dateTimeString; // Return original on error
+		}
+	}
 
 	function renderClientSidePage() {
 		resultsContainer.innerHTML = '';
@@ -604,8 +638,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			let listingUrl = '#';
 			let titleAddress = 'N/A';
 			let price = 'N/A';
-			let baseDescriptionFromApi = ''; // Original description from API if any
-			let scrapedHtmlDescription = listing.scraped_description || ''; // Scraped one
+			let baseDescriptionFromApi = '';
+			let scrapedHtmlDescription = listing.scraped_description || '';
+			let inspectionTimesHtml = '';
 
 			// --- Features HTML ---
 			let featuresHtml = '<ul class="listing-features">'; // Start features list
@@ -624,6 +659,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (listing.features.beds !== undefined) featuresHtml += `<li>Beds: ${listing.features.beds}</li>`;
 					if (listing.features.baths !== undefined) featuresHtml += `<li>Baths: ${listing.features.baths}</li>`;
 					if (listing.features.propertyTypeFormatted) featuresHtml += `<li>Type: ${listing.features.propertyTypeFormatted}</li>`;
+				}
+				if (listing.inspection && listing.inspection.openTime) {
+					const openTime = formatDateTimeForDisplay(listing.inspection.openTime);
+					let inspectionText = `<strong>Inspection:</strong> ${openTime}`;
+					if (listing.inspection.closeTime) {
+						const closeTime = formatDateTimeForDisplay(listing.inspection.closeTime, true);
+						inspectionText += ` - ${closeTime}`;
+					}
+					inspectionTimesHtml = `<p>${inspectionText}</p>`;
 				}
 
 			} else if (listing.original_api_source === 'rentdc') {
@@ -658,6 +702,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				if(listing.propertyType) featuresHtml += `<li>Type: ${listing.propertyType}</li>`;
 
+				if (listing.nextInspectionTime && listing.nextInspectionTime.startTime) {
+					const startTime = formatDateTimeForDisplay(listing.nextInspectionTime.startTime);
+					let inspectionText = `<strong>Next Inspection:</strong> ${startTime}`;
+					if (listing.nextInspectionTime.endTime) {
+						const endTime = formatDateTimeForDisplay(listing.nextInspectionTime.endTime, true);
+						inspectionText += ` - ${endTime}`;
+					}
+					inspectionTimesHtml = `<p>${inspectionText}</p>`;
+				}
 
 			} else if (listing.original_api_source === 'flatmates') {
 				titleAddress = listing.address || 'Address not available';
@@ -701,7 +754,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				<h3><a href="${listingUrl}" target="_blank" rel="noopener noreferrer">${titleAddress}</a></h3>
 				<p><strong>Price:</strong> ${price}</p>
 				<div class="listing-images-container">${imagesHtml}</div>
-				${featuresHtml} 
+				${featuresHtml}
+				${inspectionTimesHtml}
 				${finalDescriptionHtml ? `<div class="description-html-content">${finalDescriptionHtml}</div>` : '<p>No description available.</p>'}
 			`;
 			resultsContainer.appendChild(card);
