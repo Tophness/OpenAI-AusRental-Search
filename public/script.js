@@ -511,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			let finalDescriptionHtml = displayDescriptionHtml;
 
 			// Simple truncation for HTML (could be more sophisticated to avoid breaking tags badly)
+			/*
 			if (displayDescriptionHtml.length > descriptionLengthLimit) {
 				 // Find a space to break nicely, or just cut
 				let breakPoint = displayDescriptionHtml.lastIndexOf(' ', descriptionLengthLimit);
@@ -519,6 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				}
 				finalDescriptionHtml = displayDescriptionHtml.substring(0, breakPoint) + '...';
 			}
+			*/
 
 
 			card.innerHTML = `
