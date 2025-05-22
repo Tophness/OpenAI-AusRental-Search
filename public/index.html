@@ -17,9 +17,31 @@
             <button class="tab-link" data-tab="flatmates">Flatmates.com.au</button>
         </div>
 
+        <!-- Add Filter and Sort Controls here, above the forms or results -->
+        <div class="controls- Sorter">
+            <div class="filter-group">
+                <label for="filter-address">Filter Addresses (comma-sep, hides if match):</label>
+                <input type="text" id="filter-address" value="room">
+            </div>
+            <div class="filter-group">
+                <label for="filter-description">Filter Descriptions (comma-sep, hides if match):</label>
+                <input type="text" id="filter-description" value="room">
+            </div>
+            <div class="sort-group">
+                <label for="sort-results">Sort by:</label>
+                <select id="sort-results">
+                    <option value="price-asc">Price (Low-High)</option>
+                    <option value="price-desc">Price (High-Low)</option>
+                    <!-- Add more sort options later if needed -->
+                </select>
+            </div>
+        </div>
+
+
         <div id="domain" class="tab-content active">
             <h2>Search Domain.com.au</h2>
             <form id="domain-form">
+                <!-- Form fields as before -->
                 <div class="form-grid">
                     <div><label for="domain-suburb">Suburbs (suburb-state-postcode, comma-separated):</label><input type="text" id="domain-suburb" name="suburb" placeholder="chatswood-nsw-2067,gordon-nsw-2072"></div>
                     <div><label for="domain-bedrooms">Bedrooms (e.g., 2 or 2-4, 1-any):</label><input type="text" id="domain-bedrooms" name="bedrooms" placeholder="2-3"></div>
@@ -29,7 +51,7 @@
                     </div>
                     <div><label for="domain-excludedeposittaken">Exclude Deposit Taken (1 for yes, 0 for no):</label><input type="number" id="domain-excludedeposittaken" name="excludedeposittaken" value="1" min="0" max="1"></div>
                     <div><label for="domain-images">Number of Images (0 to disable):</label><input type="number" id="domain-images" name="images" value="2"></div>
-                    <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="page" value="1"> {/* This page input is for the API, will be managed for initial fetch */}
                 </div>
                 <button type="submit">Search Domain</button>
             </form>
@@ -38,6 +60,7 @@
         <div id="rentdc" class="tab-content">
             <h2>Search Rent.com.au</h2>
             <form id="rentdc-form">
+                 <!-- Form fields as before -->
                  <div class="form-grid">
                     <div><label for="rentdc-suburbs">Suburbs (suburb postcode, comma-separated):</label><input type="text" id="rentdc-suburbs" name="suburbs" required placeholder="fairfield 2165,penrith 2750"></div>
                     <div><label for="rentdc-surrounding_suburbs">Include Surrounding (1 for yes, 0 for no):</label><input type="number" id="rentdc-surrounding_suburbs" name="surrounding_suburbs" value="0" min="0" max="1"></div>
@@ -56,6 +79,7 @@
         <div id="realestate" class="tab-content">
             <h2>Search Realestate.com.au</h2>
             <form id="realestate-form">
+                <!-- Form fields as before -->
                 <div class="form-grid">
                     <div><label for="realestate-searchLocation">Location (suburb, postcode, state, comma-separated):</label><input type="text" id="realestate-searchLocation" name="searchLocation" required placeholder="Penrith, NSW"></div>
                     <div><label for="realestate-propertyType">Property Type:</label>
@@ -90,7 +114,7 @@
                     <div><label for="realestate-descriptionLength">Description Length (0 to disable):</label><input type="number" id="realestate-descriptionLength" name="descriptionLength" value="200"></div>
                     <input type="hidden" name="channel" value="rent">
                     <input type="hidden" name="page" value="1">
-                    <input type="hidden" name="pageSize" value="20">
+                    <input type="hidden" name="pageSize" value="20"> {/* Default page size for REA */}
                 </div>
                 <button type="submit">Search Realestate.com.au</button>
             </form>
@@ -99,6 +123,7 @@
         <div id="flatmates" class="tab-content">
             <h2>Search Flatmates.com.au</h2>
             <form id="flatmates-form">
+                <!-- Form fields as before -->
                 <div class="form-grid">
                     <div><label for="flatmates-locations">Locations (suburb-postcode, use + for multiple):</label><input type="text" id="flatmates-locations" name="locations" placeholder="penrith-2750+parramatta-2150"></div>
                     <div><label for="flatmates-minBudget">Min Budget:</label><input type="text" id="flatmates-minBudget" name="minBudget" placeholder="150"></div>
@@ -135,7 +160,7 @@
                     <div><label><input type="checkbox" name="billsIncluded"> Bills Included</label></div>
                     <div><label><input type="checkbox" name="pets"> Pets Allowed</label></div>
                     <div><label><input type="checkbox" name="smokers"> Smokers Allowed</label></div>
-                    <div><label><input type="checkbox" name="couples" name="gender" value="couples"> Couples</label></div>
+                    <div><label><input type="checkbox" name="couples" value="couples"> Couples</label></div> {/* Removed name="gender" as it conflicts if multiple checkboxes set gender */}
                     <div><label><input type="checkbox" name="shareHouses" checked> Share Houses</label></div>
                     <div><label><input type="checkbox" name="wholeProperties"> Whole Properties</label></div>
                     <div><label><input type="checkbox" name="studios"> Studios</label></div>
@@ -148,7 +173,7 @@
             </form>
         </div>
 
-        <div id="loading" style="display: none; text-align: center; padding: 20px;">Loading...</div>
+        <div id="loading-message" style="display: none; text-align: center; padding: 20px; font-weight: bold;">Loading...</div>
         <div id="error-message" style="display: none; color: red; text-align: center; padding: 20px;"></div>
 
         <div id="results-container">

@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const PROXY_BASE_URL = 'https://openai-ausrental-search-d3ys.onrender.com';
 
+    // --- UI Elements ---
     const tabs = document.querySelectorAll('.tab-link');
     const tabContents = document.querySelectorAll('.tab-content');
-    const loadingDiv = document.getElementById('loading');
+    const loadingMessageDiv = document.getElementById('loading-message'); // Updated ID
     const errorDiv = document.getElementById('error-message');
     const resultsContainer = document.getElementById('results-container');
     const paginationControls = document.getElementById('pagination-controls');
@@ -11,69 +12,174 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextPageButton = document.getElementById('next-page');
     const pageInfoSpan = document.getElementById('page-info');
 
-    let currentApiSource = 'domain'; // Default active tab
-    let currentPage = 1;
-    let totalPages = 1;
-    let currentFormData = null; // To store form data for pagination
+    const filterAddressInput = document.getElementById('filter-address');
+    const filterDescriptionInput = document.getElementById('filter-description');
+    const sortResultsSelect = document.getElementById('sort-results');
 
+    // --- State Variables ---
+    let currentApiSource = 'domain';
+    let allFetchedListings = []; // Store all listings from all pages + descriptions
+    let processedListings = []; // Listings after filtering and sorting
+    
+    let clientSideCurrentPage = 1;
+    const CLIENT_SIDE_ITEMS_PER_PAGE = 10; // Or make this configurable
+
+    // Rate Limiting for description fetching (user configurable - constants for now)
+    const DESCRIPTION_FETCH_DELAY_MS = 100; // 0.1 second delay between fetches
+    const DESCRIPTION_FETCH_BATCH_SIZE = 10; // Process 10, then apply a longer delay if needed. Or just delay every N. Let's use 1s every 100 results as requested.
+    const BULK_DELAY_MS = 1000;
+    const BULK_DELAY_BATCH_SIZE = 100; // Wait 1 second every 100 description fetches
+
+    let initialFormData = null; // To store the primary form data
+
+    // --- Helper: Debounce ---
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+    
     // --- Tab Switching ---
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(tc => tc.classList.remove('active'));
-
             tab.classList.add('active');
             document.getElementById(tab.dataset.tab).classList.add('active');
-            
             currentApiSource = tab.dataset.tab;
-            resultsContainer.innerHTML = ''; // Clear results on tab switch
-            paginationControls.style.display = 'none'; // Hide pagination
-            errorDiv.style.display = 'none';
+            clearResultsAndState();
         });
     });
+
+    function clearResultsAndState() {
+        allFetchedListings = [];
+        processedListings = [];
+        resultsContainer.innerHTML = '';
+        paginationControls.style.display = 'none';
+        errorDiv.style.display = 'none';
+        loadingMessageDiv.style.display = 'none';
+        clientSideCurrentPage = 1;
+    }
 
     // --- Form Submission ---
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            currentPage = 1; // Reset to page 1 for new search
-            const formHiddenPageInput = form.querySelector('input[name="page"]');
-            if (formHiddenPageInput) {
-                formHiddenPageInput.value = currentPage;
-            }
-            currentFormData = new FormData(form);
-            fetchData(currentApiSource, currentFormData);
+            clearResultsAndState();
+            initialFormData = new FormData(form); // Store the form data for reuse
+            fetchAllDataProcess();
         });
     });
 
-    // --- Fetch Data Function ---
-    async function fetchData(apiSource, formData) {
-        loadingDiv.style.display = 'block';
+    // --- Event Listeners for Filters and Sort ---
+    filterAddressInput.addEventListener('input', debounce(processAndDisplayListings, 500));
+    filterDescriptionInput.addEventListener('input', debounce(processAndDisplayListings, 500));
+    sortResultsSelect.addEventListener('change', processAndDisplayListings);
+
+
+    // --- Main Data Fetching and Processing Logic ---
+    async function fetchAllDataProcess() {
+        if (!initialFormData) return;
+
+        loadingMessageDiv.textContent = 'Fetching initial listings...';
+        loadingMessageDiv.style.display = 'block';
         errorDiv.style.display = 'none';
-        resultsContainer.innerHTML = '';
-        paginationControls.style.display = 'none';
 
-        // Update page in formData for pagination calls
-        if (formData.has('page')) {
-            formData.set('page', currentPage);
-        } else {
-            formData.append('page', currentPage);
+        let listingsFromApi = [];
+        let currentPageForApi = 1;
+        let hasMorePages = true;
+
+        try {
+            while (hasMorePages) {
+                loadingMessageDiv.textContent = `Fetching listings (API Page ${currentPageForApi})...`;
+                const formDataForPage = new FormData(initialFormData.entries().next().value ? initialFormData : document.getElementById(`${currentApiSource}-form`)); // Ensure fresh FormData if initial is empty (e.g. after tab switch and direct filter change)
+                
+                // Update page number for the API request
+                if (formDataForPage.has('page')) {
+                    formDataForPage.set('page', currentPageForApi);
+                } else {
+                    formDataForPage.append('page', currentPageForApi);
+                }
+                
+                const apiResponse = await makeApiRequest(currentApiSource, formDataForPage);
+
+                if (!apiResponse || (Array.isArray(apiResponse.listings) && apiResponse.listings.length === 0 && currentApiSource !== 'domain') || (currentApiSource === 'domain' && Object.keys(apiResponse.listings || {}).length === 0 && currentPageForApi > 1) ) {
+                     if (currentApiSource === 'domain' && currentPageForApi === 1 && Object.keys(apiResponse.listings || {}).length === 0) {
+                        // Domain might return empty on page 1 if no results.
+                        // But if it's > page 1 and empty, means no more.
+                     } else {
+                        hasMorePages = false; // Stop if no listings are returned (and not first page for domain)
+                     }
+                }
+
+
+                let newPageListings = [];
+                switch (currentApiSource) {
+                    case 'domain':
+                        newPageListings = apiResponse.listings ? Object.values(apiResponse.listings).map(l => ({ ...l.listingModel, original_api_source: 'domain' })) : [];
+                        hasMorePages = currentPageForApi < (apiResponse.totalPages || 1);
+                        break;
+                    case 'rentdc':
+                        newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'rentdc' }));
+                        hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / 20); // Assuming 20 per page for rentdc
+                        if (apiResponse.nextPageNum && apiResponse.nextPageNum <= currentPageForApi) hasMorePages = false; // another check
+                        break;
+                    case 'realestate':
+                        newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'realestate' }));
+                        const pageSizeRea = parseInt(formDataForPage.get('pageSize') || '20');
+                        hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / pageSizeRea);
+                        break;
+                    case 'flatmates':
+                        newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'flatmates' }));
+                        hasMorePages = !!apiResponse.nextPage; // Flatmates directly tells us if there's a next page
+                        break;
+                }
+                
+                if (newPageListings.length === 0 && currentPageForApi > 1) { // If not the first page and no listings, stop.
+                     hasMorePages = false;
+                } else if (newPageListings.length > 0) {
+                    listingsFromApi.push(...newPageListings);
+                }
+
+
+                if (hasMorePages) {
+                    currentPageForApi++;
+                } else {
+                    break; 
+                }
+                 if (currentPageForApi > 50) { // Safety break for runaway loops
+                    console.warn("Safety break: Exceeded 50 pages for API fetch.");
+                    hasMorePages = false;
+                }
+            }
+            
+            allFetchedListings = listingsFromApi;
+
+            // Now fetch descriptions if needed
+            if (currentApiSource === 'domain' || currentApiSource === 'rentdc') {
+                await fetchAndScrapeDescriptions(allFetchedListings, currentApiSource);
+            }
+
+            processAndDisplayListings();
+
+        } catch (error) {
+            console.error('Error in fetchAllDataProcess:', error);
+            showError(`Failed during data fetching: ${error.message}`);
+        } finally {
+            loadingMessageDiv.style.display = 'none';
         }
-
+    }
+    
+    async function makeApiRequest(apiSource, formData) {
         let url;
-        let params = new URLSearchParams();
-
-        // Filter out empty values and build query string
+        const params = new URLSearchParams();
         for (const [key, value] of formData.entries()) {
             if (value !== null && value !== '' && value !== undefined) {
-                if (value instanceof File && value.name === "" && value.size === 0) continue; // Skip empty file inputs if any
-                 // For checkboxes that are not checked, FormData doesn't include them.
-                 // For boolean parameters where false is 'false' string or 0, need specific handling if desired.
-                 // Here, we assume presence means true for checkboxes, and text inputs provide values.
                 params.append(key, value);
             }
         }
-        
         const queryString = params.toString();
 
         switch (apiSource) {
@@ -81,13 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 url = `${PROXY_BASE_URL}/domain/?${queryString}`;
                 break;
             case 'rentdc':
-                // rent.com.au has suburbs in path
                 const suburbs = formData.get('suburbs');
-                if (!suburbs) {
-                    showError("Suburbs are required for Rent.com.au");
-                    return;
-                }
-                // Remove suburbs from query params as it's in the path
+                if (!suburbs) throw new Error("Suburbs are required for Rent.com.au");
                 const rentDcParams = new URLSearchParams(params);
                 rentDcParams.delete('suburbs');
                 url = `${PROXY_BASE_URL}/rentdc/${encodeURIComponent(suburbs)}?${rentDcParams.toString()}`;
@@ -99,233 +200,289 @@ document.addEventListener('DOMContentLoaded', () => {
                 url = `${PROXY_BASE_URL}/flatmates/?${queryString}`;
                 break;
             default:
-                showError('Invalid API source.');
-                return;
+                throw new Error('Invalid API source.');
         }
         
-        console.log("Requesting URL:", url);
+        const response = await fetch(url);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    }
 
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    async function fetchAndScrapeDescriptions(listings, apiSource) {
+        loadingMessageDiv.textContent = 'Fetching detailed descriptions... (0%)';
+        let fetchedCount = 0;
+        const totalToFetch = listings.filter(l => l.url).length; // Count only those with URLs
+
+        for (let i = 0; i < listings.length; i++) {
+            const listing = listings[i];
+            let pageUrl = '';
+
+            if (apiSource === 'domain' && listing.url) {
+                pageUrl = `https://www.domain.com.au${listing.url}`;
+            } else if (apiSource === 'rentdc' && listing.url) {
+                pageUrl = `https://www.rent.com.au${listing.url}`; // Assuming root needed
             }
-            const data = await response.json();
-            console.log("Received data:", data);
-            displayResults(data, apiSource);
-            setupPagination(data, apiSource);
-        } catch (error) {
-            console.error('Fetch error:', error);
-            showError(`Failed to fetch data: ${error.message}`);
-        } finally {
-            loadingDiv.style.display = 'none';
+
+            if (pageUrl) {
+                try {
+                    const proxyScrapeUrl = `${PROXY_BASE_URL}/scrape-html?url=${encodeURIComponent(pageUrl)}`;
+                    const response = await fetch(proxyScrapeUrl);
+                    if (!response.ok) {
+                        console.warn(`Failed to scrape ${pageUrl}: ${response.status}`);
+                        listing.scraped_description = 'Error fetching description.';
+                        continue;
+                    }
+                    const htmlText = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    
+                    let descText = '';
+                    if (apiSource === 'domain') {
+                        const descElement = doc.querySelector('div[data-testid="listing-details__description"]');
+                        descText = descElement ? descElement.innerHTML : 'Description not found.';
+                    } else if (apiSource === 'rentdc') {
+                        const descElement = doc.querySelector('p.property-description-content');
+                        descText = descElement ? descElement.innerHTML : 'Description not found.';
+                    }
+                    listing.scraped_description = descText; // Add it to the listing object
+
+                    fetchedCount++;
+                    const percentage = totalToFetch > 0 ? Math.round((fetchedCount / totalToFetch) * 100) : 0;
+                    loadingMessageDiv.textContent = `Fetching detailed descriptions... (${percentage}%) - ${fetchedCount} of ${totalToFetch}`;
+
+                    // Rate limiting
+                    if (fetchedCount % DESCRIPTION_FETCH_BATCH_SIZE === 0) {
+                        await new Promise(resolve => setTimeout(resolve, DESCRIPTION_FETCH_DELAY_MS));
+                    }
+                    if (fetchedCount % BULK_DELAY_BATCH_SIZE === 0 && fetchedCount > 0) {
+                        loadingMessageDiv.textContent += ` Pausing for ${BULK_DELAY_MS/1000}s...`;
+                        await new Promise(resolve => setTimeout(resolve, BULK_DELAY_MS));
+                    }
+
+                } catch (err) {
+                    console.error(`Error scraping description for ${pageUrl}:`, err);
+                    listing.scraped_description = 'Error processing description.';
+                }
+            }
         }
     }
 
-    // --- Display Results ---
-    function displayResults(data, apiSource) {
-        resultsContainer.innerHTML = ''; // Clear previous results
 
-        let listings = [];
-        if (!data) {
-            resultsContainer.innerHTML = '<p>No results found or error in response.</p>';
+    function processAndDisplayListings() {
+        if (allFetchedListings.length === 0 && initialFormData) { // If no listings but form was submitted, maybe trigger fetch
+             // This case might occur if filters are changed before initial search completes or if search yields no results.
+             // Let's not auto-fetch here to avoid loops, user should re-submit form.
+             // However, if allFetchedListings IS populated, then proceed.
+        } else if (allFetchedListings.length === 0 && !initialFormData) {
+            resultsContainer.innerHTML = "<p>Please perform a search first.</p>";
+            paginationControls.style.display = 'none';
             return;
         }
 
-        switch (apiSource) {
-            case 'domain':
-                if (data.listings && typeof data.listings === 'object') {
-                    listings = Object.values(data.listings).map(l => l.listingModel);
-                }
-                break;
-            case 'rentdc':
-                listings = data.listings || [];
-                break;
-            case 'realestate':
-                listings = data.listings || [];
-                break;
-            case 'flatmates':
-                listings = data.listings || [];
-                break;
+
+        let currentProcessedListings = [...allFetchedListings];
+
+        // 1. Apply Filters
+        const addressFilterTerms = filterAddressInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+        const descriptionFilterTerms = filterDescriptionInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
+
+        if (addressFilterTerms.length > 0) {
+            currentProcessedListings = currentProcessedListings.filter(listing => {
+                const address = (listing.address || '').toLowerCase();
+                return !addressFilterTerms.some(term => address.includes(term));
+            });
         }
 
-        if (listings.length === 0) {
-            resultsContainer.innerHTML = '<p>No listings found for your criteria.</p>';
+        if (descriptionFilterTerms.length > 0) {
+            currentProcessedListings = currentProcessedListings.filter(listing => {
+                const description = (listing.description || listing.scraped_description || '').toLowerCase();
+                return !descriptionFilterTerms.some(term => description.includes(term));
+            });
+        }
+        
+        // 2. Apply Sorting
+        const sortBy = sortResultsSelect.value;
+        currentProcessedListings.sort((a, b) => {
+            const priceA = parsePrice(a.price);
+            const priceB = parsePrice(b.price);
+
+            if (priceA === null && priceB === null) return 0;
+            if (priceA === null) return 1; // Nulls (unparseable) go to the end
+            if (priceB === null) return -1;
+
+            if (sortBy === 'price-asc') {
+                return priceA - priceB;
+            } else if (sortBy === 'price-desc') {
+                return priceB - priceA;
+            }
+            return 0;
+        });
+
+        processedListings = currentProcessedListings; // Update the global processed list
+        clientSideCurrentPage = 1; // Reset to first page for new filter/sort
+        renderClientSidePage();
+        setupClientSidePagination();
+    }
+
+    function parsePrice(priceString) {
+        if (!priceString || typeof priceString !== 'string') return null;
+        
+        // Remove "pw", "/w", "per week", etc. and any non-numeric/non-decimal characters except '$'
+        let cleaned = priceString.toLowerCase().replace(/pw|per week|\/w/g, '').replace(/[^0-9.-]/g, '');
+        
+        if (cleaned.includes('-')) { // Handle range like "400-500"
+            const parts = cleaned.split('-').map(p => parseFloat(p));
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                return (parts[0] + parts[1]) / 2; // Average
+            }
+            return null;
+        }
+        
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+    }
+
+
+    function renderClientSidePage() {
+        resultsContainer.innerHTML = '';
+        if (processedListings.length === 0) {
+            resultsContainer.innerHTML = '<p>No listings match your criteria after filtering.</p>';
             return;
         }
 
-        listings.forEach(listing => {
+        const startIndex = (clientSideCurrentPage - 1) * CLIENT_SIDE_ITEMS_PER_PAGE;
+        const endIndex = startIndex + CLIENT_SIDE_ITEMS_PER_PAGE;
+        const pageListings = processedListings.slice(startIndex, endIndex);
+
+        pageListings.forEach(listing => {
             const card = document.createElement('div');
             card.classList.add('listing-card');
             let imagesHtml = '<div class="listing-images">';
             let listingUrl = '#';
             let titleAddress = 'N/A';
             let price = 'N/A';
-            let description = '';
-            let featuresHtml = '<ul class="listing-features">';
+            let baseDescription = ''; // Original description from API if any
+            let detailedDescription = listing.scraped_description || ''; // Scraped one
 
             // Adapt to different API response structures
-            if (apiSource === 'domain') {
+            if (listing.original_api_source === 'domain') {
                 titleAddress = listing.address || 'Address not available';
                 listingUrl = listing.url ? `https://www.domain.com.au${listing.url}` : '#';
                 price = listing.price || 'Price on application';
                 if (listing.images && listing.images.length > 0) {
-                    listing.images.forEach(img => imagesHtml += `<img src="${img.url || img}" alt="Property image">`);
+                    (listing.images || []).forEach(img => imagesHtml += `<img src="${img.url || img}" alt="Property image">`);
                 }
-                if (listing.features) {
-                    featuresHtml += `<li>Beds: ${listing.features.beds || 'N/A'}</li>`;
-                    featuresHtml += `<li>Baths: ${listing.features.baths || 'N/A'}</li>`;
-                    if(listing.features.propertyTypeFormatted) featuresHtml += `<li>Type: ${listing.features.propertyTypeFormatted}</li>`;
-                }
-                description = listing.inspection?.openTime ? `Inspection: ${listing.inspection.openTime} - ${listing.inspection.closeTime}` : (listing.headline || '');
-
-            } else if (apiSource === 'rentdc') {
+                baseDescription = listing.inspection?.openTime ? `Inspection: ${listing.inspection.openTime} - ${listing.inspection.closeTime}` : (listing.headline || '');
+            } else if (listing.original_api_source === 'rentdc') {
                 titleAddress = listing.address || 'Address not available';
-                listingUrl = listing.url ? `https://www.rent.com.au${listing.url}` : '#'; // Assuming root needed
+                listingUrl = listing.url ? `https://www.rent.com.au${listing.url}` : '#';
                 price = listing.price || 'Price on application';
-                if (listing.imageUrl) { // rent.com.au seems to provide one main imageUrl
-                    imagesHtml += `<img src="${listing.imageUrl}" alt="Property image">`;
-                }
-                if (listing.features && listing.features.length > 0) {
-                    listing.features.forEach(f => featuresHtml += `<li>${f}</li>`);
-                }
-                if(listing.propType) featuresHtml += `<li>Type: ${listing.propType}</li>`;
-                description = listing.description || '';
-
-            } else if (apiSource === 'realestate') {
+                if (listing.imageUrl) { imagesHtml += `<img src="${listing.imageUrl}" alt="Property image">`; }
+                baseDescription = listing.description || ''; // RentDC already had a description field
+            } else if (listing.original_api_source === 'realestate') {
                 titleAddress = listing.address || 'Address not available';
                 listingUrl = listing.prettyUrl ? `https://www.realestate.com.au${listing.prettyUrl}` : '#';
                 price = listing.price || 'Price on application';
-                 if (listing.images && listing.images.length > 0) {
-                    listing.images.forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
+                if (listing.images && listing.images.length > 0) {
+                    (listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
                 }
-                if (listing.propertyFeatures && listing.propertyFeatures.length > 0) {
-                    listing.propertyFeatures.forEach(f => featuresHtml += `<li>${f}</li>`);
-                }
-                if(listing.propertyType) featuresHtml += `<li>Type: ${listing.propertyType}</li>`;
-                description = listing.description || '';
-                if(listing.bond) description += `<br><strong>Bond:</strong> ${listing.bond}`;
-                if(listing.dateAvailable) description += `<br><strong>Available:</strong> ${new Date(listing.dateAvailable).toLocaleDateString()}`;
-                if(listing.nextInspectionTime) description += `<br><strong>Inspection:</strong> ${new Date(listing.nextInspectionTime.startTime).toLocaleString()} - ${new Date(listing.nextInspectionTime.endTime).toLocaleString()}`;
-
-
-            } else if (apiSource === 'flatmates') {
+                baseDescription = listing.description || '';
+                // Add REA specific details if needed
+            } else if (listing.original_api_source === 'flatmates') {
                 titleAddress = listing.address || 'Address not available';
                 listingUrl = listing.url ? `https://flatmates.com.au${listing.url}` : '#';
                 price = listing.price || 'Price on application';
                 if (listing.billsIncluded) price += ' (bills incl.)';
                 if (listing.images && listing.images.length > 0) {
-                    listing.images.forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
+                    (listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
                 }
-                if (listing.bedrooms) featuresHtml += `<li>Beds: ${listing.bedrooms}</li>`;
-                if (listing.bathrooms) featuresHtml += `<li>Baths: ${listing.bathrooms}</li>`;
-                if (listing.occupants) featuresHtml += `<li>Occupants: ${listing.occupants}</li>`;
-                if (listing.rooms) featuresHtml += `<li>Rooms: ${listing.rooms}</li>`;
-                description = listing.description || '';
+                baseDescription = listing.description || '';
             }
             
             imagesHtml += '</div>';
-            featuresHtml += '</ul>';
+
+            // Use scraped description if available, otherwise API's (potentially truncated)
+            const displayDescription = detailedDescription || baseDescription;
+            // For display, use innerText to avoid rendering raw HTML from scrape, unless you trust it or sanitize it
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = displayDescription; // Render HTML to get text content
+            const cleanTextDescription = tempDiv.textContent || tempDiv.innerText || "";
+
 
             card.innerHTML = `
-                <h3><a href="${listingUrl}" target="_blank">${titleAddress}</a></h3>
+                <h3><a href="${listingUrl}" target="_blank" rel="noopener noreferrer">${titleAddress}</a></h3>
                 <p><strong>Price:</strong> ${price}</p>
                 ${imagesHtml}
-                ${featuresHtml}
-                ${description ? `<p class="description">${description.substring(0,200)}${description.length > 200 ? '...' : ''}</p>` : ''}
+                ${listing.features ? `<p>Features: ${formatFeatures(listing.features, listing.original_api_source)}</p>` : ''}
+                ${cleanTextDescription ? `<p class="description">${cleanTextDescription.substring(0, 300)}${cleanTextDescription.length > 300 ? '...' : ''}</p>` : '<p>No description available.</p>'}
             `;
             resultsContainer.appendChild(card);
         });
     }
-
-    // --- Setup Pagination ---
-    function setupPagination(data, apiSource) {
-        let listingsPerPage = 20; // Default or from API
-        let totalListings = 0;
-
-        if (!data) {
-            paginationControls.style.display = 'none';
-            return;
+    
+    function formatFeatures(featuresData, apiSource) {
+        if (!featuresData) return 'N/A';
+        if (apiSource === 'domain') {
+            return `Beds: ${featuresData.beds || 'N/A'}, Baths: ${featuresData.baths || 'N/A'}${featuresData.propertyTypeFormatted ? ', Type: ' + featuresData.propertyTypeFormatted : ''}`;
+        } else if (apiSource === 'rentdc') {
+            return (Array.isArray(featuresData) ? featuresData.join(', ') : 'N/A') + (featuresData.propType ? `, Type: ${featuresData.propType}` : '');
+        } else if (apiSource === 'realestate') {
+             return (Array.isArray(featuresData.propertyFeatures) ? featuresData.propertyFeatures.join(', ') : 'N/A') + (featuresData.propertyType ? `, Type: ${featuresData.propertyType}` : '');
+        } else if (apiSource === 'flatmates') {
+            let str = '';
+            if (featuresData.bedrooms) str += `Beds: ${featuresData.bedrooms}, `;
+            if (featuresData.bathrooms) str += `Baths: ${featuresData.bathrooms}, `;
+            if (featuresData.occupants) str += `Occupants: ${featuresData.occupants}, `;
+            if (featuresData.rooms) str += `Rooms: ${featuresData.rooms}`;
+            return str.replace(/, $/, ''); // Remove trailing comma
         }
+        return JSON.stringify(featuresData); // Fallback
+    }
 
-        switch (apiSource) {
-            case 'domain':
-                totalPages = data.totalPages || 1;
-                currentPage = data.page || 1;
-                totalListings = data.totalListings || 0;
-                listingsPerPage = data.listingsPerPage || (Object.keys(data.listings || {}).length);
-                break;
-            case 'rentdc':
-                totalListings = data.totalListings || 0;
-                // rent.com.au seems to have 20 listings per page implicitly
-                listingsPerPage = 20; 
-                totalPages = Math.ceil(totalListings / listingsPerPage);
-                currentPage = data.currentPageNum || 1;
-                break;
-            case 'realestate':
-                totalListings = data.totalListings || 0;
-                listingsPerPage = data.pageSize || 20;
-                totalPages = Math.ceil(totalListings / listingsPerPage);
-                currentPage = data.currentPage || 1;
-                break;
-            case 'flatmates':
-                // Flatmates gives nextPage, doesn't directly give totalPages.
-                // We might need to infer or just enable "Next" if nextPage is present.
-                // For simplicity, if nextPage is null/undefined, assume it's the last.
-                // This is a simplification; a real app might need more logic.
-                currentPage = parseInt(currentFormData.get('page') || '1'); // Get current page from form data
-                if (data.nextPage) {
-                    totalPages = currentPage + 1; // At least one more page
-                } else {
-                    totalPages = currentPage; // This is the last page
-                }
-                // If we want to show total pages, we need total listings from somewhere
-                // or make an initial request that provides it, or just show "Page X"
-                totalListings = listingsPerPage * currentPage + (data.nextPage ? listingsPerPage : 0); // Approximation
-                break;
-        }
-        
-        if (totalListings > 0 && totalPages > 1) {
+
+    function setupClientSidePagination() {
+        const totalClientPages = Math.ceil(processedListings.length / CLIENT_SIDE_ITEMS_PER_PAGE);
+        if (totalClientPages > 1) {
             paginationControls.style.display = 'block';
-            pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages} (Total: ${totalListings})`;
-            prevPageButton.disabled = currentPage <= 1;
-            nextPageButton.disabled = currentPage >= totalPages;
-        } else if (totalListings > 0 && totalPages === 1) {
+            pageInfoSpan.textContent = `Page ${clientSideCurrentPage} of ${totalClientPages} (Total results: ${processedListings.length})`;
+            prevPageButton.disabled = clientSideCurrentPage <= 1;
+            nextPageButton.disabled = clientSideCurrentPage >= totalClientPages;
+        } else if (processedListings.length > 0) {
              paginationControls.style.display = 'block';
-             pageInfoSpan.textContent = `Page 1 of 1 (Total: ${totalListings})`;
+             pageInfoSpan.textContent = `Page 1 of 1 (Total results: ${processedListings.length})`;
              prevPageButton.disabled = true;
              nextPageButton.disabled = true;
         }
-         else {
+        else {
             paginationControls.style.display = 'none';
         }
     }
 
-    // --- Pagination Button Clicks ---
     prevPageButton.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            fetchData(currentApiSource, currentFormData);
+        if (clientSideCurrentPage > 1) {
+            clientSideCurrentPage--;
+            renderClientSidePage();
+            setupClientSidePagination(); // Update button states and page info
         }
     });
 
     nextPageButton.addEventListener('click', () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            fetchData(currentApiSource, currentFormData);
+        const totalClientPages = Math.ceil(processedListings.length / CLIENT_SIDE_ITEMS_PER_PAGE);
+        if (clientSideCurrentPage < totalClientPages) {
+            clientSideCurrentPage++;
+            renderClientSidePage();
+            setupClientSidePagination(); // Update button states and page info
         }
     });
     
     function showError(message) {
-        loadingDiv.style.display = 'none';
+        loadingMessageDiv.style.display = 'none';
         resultsContainer.innerHTML = '';
         paginationControls.style.display = 'none';
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
     }
-
-    // Activate the default tab's form for initial view (optional)
-    // document.querySelector(`#${currentApiSource}-form button[type="submit"]`).click(); 
-    // Or simply leave it blank until user interacts.
 });

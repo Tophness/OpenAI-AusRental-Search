@@ -220,3 +220,38 @@ button[type="submit"]:hover {
     font-size: 1.2em;
     font-weight: bold;
 }
+
+#loading-message {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.controls-sorter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+.filter-group, .sort-group {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.filter-group label, .sort-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #444;
+}
+
+.filter-group input[type="text"], .sort-group select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
