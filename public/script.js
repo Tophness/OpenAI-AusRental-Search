@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchAndScrapeDescriptions(listings, apiSource) {
         loadingMessageDiv.textContent = 'Fetching detailed descriptions... (0%)';
         let fetchedCount = 0;
-        const totalToFetch = listings.filter(l => l.url).length; // Count only those with URLs
+        const totalToFetch = listings.filter(l => l.url).length;
 
         for (let i = 0; i < listings.length; i++) {
             const listing = listings[i];
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (apiSource === 'domain' && listing.url) {
                 pageUrl = `https://www.domain.com.au${listing.url}`;
             } else if (apiSource === 'rentdc' && listing.url) {
-                pageUrl = `https://www.rent.com.au${listing.url}`; // Assuming root needed
+                pageUrl = `https://www.rent.com.au${listing.url}`;
             }
 
             if (pageUrl) {
@@ -273,27 +273,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!response.ok) {
                         console.warn(`Failed to scrape ${pageUrl}: ${response.status}`);
                         listing.scraped_description = 'Error fetching description.';
+                        fetchedCount++; // Still count it as an attempt
                         continue;
                     }
                     const htmlText = await response.text();
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(htmlText, 'text/html');
                     
-                    let descText = '';
+                    let descHtmlContent = ''; // Store the relevant HTML content
                     if (apiSource === 'domain') {
-                        const descElement = doc.querySelector('div[data-testid="listing-details__description"]');
-                        descText = descElement ? descElement.innerHTML : 'Description not found.';
+                        // Try to get the content within the expander first
+                        const expanderContent = doc.querySelector('div[data-testid="listing-details__description"] .noscript-expander-content');
+                        if (expanderContent) {
+                            descHtmlContent = expanderContent.innerHTML;
+                        } else {
+                            // Fallback if the expander structure isn't found (e.g., for very short descriptions)
+                            const mainDescElement = doc.querySelector('div[data-testid="listing-details__description"]');
+                            if (mainDescElement) {
+                                // Attempt to remove the "Read more" button part to avoid including it.
+                                const readMoreButtonContainer = mainDescElement.querySelector('.css-ldqj9h'); // Class of the button's div
+                                if (readMoreButtonContainer) {
+                                    readMoreButtonContainer.remove();
+                                }
+                                // Also remove the main H2 "Property Description" title if we just want the body
+                                const mainTitle = mainDescElement.querySelector('h2.css-8shhfl');
+                                if (mainTitle) {
+                                    mainTitle.remove();
+                                }
+                                descHtmlContent = mainDescElement.innerHTML;
+                            } else {
+                                descHtmlContent = 'Description element not found on page.';
+                            }
+                        }
                     } else if (apiSource === 'rentdc') {
                         const descElement = doc.querySelector('p.property-description-content');
-                        descText = descElement ? descElement.innerHTML : 'Description not found.';
+                        descHtmlContent = descElement ? descElement.outerHTML : 'Description element not found on page.'; // Use outerHTML to keep the <p> tag itself
                     }
-                    listing.scraped_description = descText; // Add it to the listing object
+                    listing.scraped_description = descHtmlContent;
 
                     fetchedCount++;
                     const percentage = totalToFetch > 0 ? Math.round((fetchedCount / totalToFetch) * 100) : 0;
                     loadingMessageDiv.textContent = `Fetching detailed descriptions... (${percentage}%) - ${fetchedCount} of ${totalToFetch}`;
 
-                    // Rate limiting
                     if (fetchedCount % DESCRIPTION_FETCH_BATCH_SIZE === 0) {
                         await new Promise(resolve => setTimeout(resolve, DESCRIPTION_FETCH_DELAY_MS));
                     }
@@ -305,9 +326,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (err) {
                     console.error(`Error scraping description for ${pageUrl}:`, err);
                     listing.scraped_description = 'Error processing description.';
+                    fetchedCount++; // Count as an attempt even on error
                 }
+            } else {
+                // If there's no URL to fetch, it's not an attempt we count for the progress bar
+                // but we should ensure scraped_description is empty or a placeholder
+                listing.scraped_description = listing.scraped_description || ''; // Keep existing if somehow set, else empty
             }
-        }
+        } // end of for loop
     }
 
 
