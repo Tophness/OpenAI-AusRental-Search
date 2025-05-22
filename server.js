@@ -335,6 +335,55 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
   }
 }));
 
+app.use('/scrape-html', proxy(
+  (req) => {
+    if (!req.query.url) {
+      console.error("scrape-html: URL query parameter is missing!");
+      return 'http://localhost:1';
+    }
+    try {
+      const targetUrl = new URL(req.query.url);
+      return targetUrl.origin;
+    } catch (e) {
+      console.error("scrape-html: Invalid URL in query parameter:", req.query.url, e);
+      return 'http://localhost:1';
+    }
+  },
+  {
+    proxyReqPathResolver: (req) => {
+      if (!req.query.url) {
+        return '/';
+      }
+      try {
+        const targetUrl = new URL(req.query.url);
+        return targetUrl.pathname + targetUrl.search;
+      } catch (e) {
+        return '/';
+      }
+    },
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36';
+      proxyReqOpts.headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
+      proxyReqOpts.headers['Accept-Language'] = 'en-US,en;q=0.9';
+      delete proxyReqOpts.headers['cookie'];
+      return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      return proxyResData;
+    },
+    proxyErrorHandler: (err, res, next) => {
+        console.error('Proxy error in /scrape-html:', err);
+        if (!res.headersSent) {
+            res.status(502).send('Proxy error: Could not fetch the requested URL.');
+        } else {
+            if (!res.writableEnded) {
+                res.end();
+            }
+        }
+    }
+  }
+));
+
 app.use('/domain', proxy('https://www.domain.com.au/rent', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     if (srcReq.url.indexOf('/?') !== -1 || srcReq.url == '/') {
