@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // IMPORTANT: Replace with your actual Node.js proxy URL
-    const PROXY_BASE_URL = 'http://localhost:3000'; // Or your deployed URL e.g. https://openai-ausrental-search.onrender.com
+    const PROXY_BASE_URL = 'https://openai-ausrental-search-d3ys.onrender.com/';
 
     const tabs = document.querySelectorAll('.tab-link');
     const tabContents = document.querySelectorAll('.tab-content');
