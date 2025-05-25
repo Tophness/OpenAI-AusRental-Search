@@ -3,6 +3,8 @@ const proxy = require('express-http-proxy');
 const cheerio = require('cheerio');
 const {URLSearchParams} = require('url');
 const cors = require("cors");
+const axios = require('axios');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 
 function extractUrlParameters(urlString) {
   const parsedUrl = new URLSearchParams(urlString);
@@ -342,89 +344,90 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
-  proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
-    proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
-    proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
-    proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
-    proxyReqOpts.headers["Cookie"] = "";
-    proxyReqOpts.headers["Referer"] = "https://www.rent.com.au/";
-	proxyReqOpts.headers['Alt-Used'] = 'www.rent.com.au';
+app.use('/rentdc', async (req, res) => {
+  // Set CORS headers for the response to your client
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "GET, OPTIONS"); // Adjust if you use other methods
+  res.set("Access-Control-Allow-Headers", "Content-Type, Accept"); // Adjust as needed
+  res.set("Access-Control-Allow-Credentials", "true");
 
-    return proxyReqOpts;
-  },
-  userResDecorator: function(proxyRes, proxyResData, req, res) {
-    res.set("Access-Control-Allow-Origin","*");
-    res.set("Access-Control-Allow-Methods","*");
-    res.set("Access-Control-Allow-Headers","*");
-    res.set("Access-Control-Allow-Credentials","true");
+  // Handle OPTIONS pre-flight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
 
-    if (proxyRes.statusCode === 200 && proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('text/html')) {
+  const targetBaseUrl = 'https://www.rent.com.au/properties';
+  // req.url will be the path and query string after /rentdc
+  // e.g., if client calls /rentdc/werrington-nsw-2747?bedrooms=1
+  // req.url will be /werrington-nsw-2747?bedrooms=1
+  const requestPathAndQuery = req.url;
+  const targetUrl = targetBaseUrl + requestPathAndQuery;
+
+  const socksProxy = 'socks5://142.54.237.34:4145'; // Your SOCKS5 proxy
+  const agent = new SocksProxyAgent(socksProxy);
+
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Referer": "https://www.rent.com.au/", // Adding a referer can sometimes help
+    "DNT": "1", // Do Not Track
+    "Upgrade-Insecure-Requests": "1",
+    // "Connection": "keep-alive", // Axios handles this with its agent
+  };
+
+  try {
+    console.log(`Attempting to fetch from rent.com.au via SOCKS5: ${targetUrl}`);
+    const response = await axios.get(targetUrl, {
+      httpAgent: agent, // For HTTP requests through SOCKS
+      httpsAgent: agent, // For HTTPS requests through SOCKS
+      headers: headers,
+      timeout: 30000, // 30 second timeout
+      // It's good to handle cookies if the site expects it.
+      // Axios can do this with a cookie jar, but for now, let's see if just proxying is enough.
+      // If cookie issues persist, you might need 'axios-cookiejar-support' and 'tough-cookie'.
+    });
+
+    if (response.status === 200 && response.headers['content-type'] && response.headers['content-type'].includes('text/html')) {
       res.set("content-type", "application/json; charset=utf-8");
-      let returnJSON = extractListingDetails(proxyResData.toString('utf8'));
+      let returnJSON = extractListingDetails(response.data.toString('utf8'));
+
       if (typeof imgParam !== 'undefined' && imgParam === 0) {
-          if (returnJSON.listings) {
-              returnJSON.listings = returnJSON.listings.map(obj => {
-                  delete obj.imageUrl;
-                  return obj;
-              });
-          }
-      }
-
-      return JSON.stringify(returnJSON);
-    } else {
-      if (proxyRes.headers['content-type']) {
-        res.set('Content-Type', proxyRes.headers['content-type']);
-      }
-      res.status(proxyRes.statusCode);
-      return proxyResData;
-    }
-  },
-  proxyErrorHandler: function(err, backendRes, next) {
-    console.error('Proxy error connecting to rent.com.au:', err);
-    if (!backendRes.headersSent) {
-        backendRes.status(502).send('Proxy error: Could not connect to the target service.');
-    } else {
-        if (!backendRes.writableEnded) {
-            backendRes.end();
+        if (returnJSON.listings) {
+          returnJSON.listings = returnJSON.listings.map(obj => {
+            delete obj.imageUrl;
+            return obj;
+          });
         }
+      }
+      res.status(200).send(JSON.stringify(returnJSON));
+    } else {
+      console.error(`rent.com.au responded with status: ${response.status}, content-type: ${response.headers['content-type']}`);
+      // Forward the status and content from rent.com.au if it's not what we expect
+      if (response.headers['content-type']) {
+        res.set('Content-Type', response.headers['content-type']);
+      }
+      res.status(response.status).send(response.data);
+    }
+  } catch (error) {
+    console.error('Error fetching from rent.com.au via SOCKS5:', error.message);
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Error Data:', error.response.data);
+      console.error('Error Status:', error.response.status);
+      console.error('Error Headers:', error.response.headers);
+      res.status(error.response.status).set(error.response.headers).send(error.response.data);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Error Request:', error.request);
+      res.status(504).send('No response received from rent.com.au (via proxy). Gateway Timeout.');
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      res.status(500).send('Error setting up request to rent.com.au (via proxy).');
     }
   }
-}));
-
-app.use('/test-rentdc-basic', proxy('https://www.rent.com.au', {
-  proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
-    proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
-    proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-    proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
-    proxyReqOpts.headers["Accept-Encoding"] = "gzip, deflate, br, zstd";
-    proxyReqOpts.headers["Alt-Used"] = "www.rent.com.au";
-    proxyReqOpts.headers["cache-control"] = "no-cache";
-    proxyReqOpts.headers["pragma"] = "no-cache";
-    proxyReqOpts.headers["sec-fetch-dest"] = "document";
-    proxyReqOpts.headers["sec-fetch-mode"] = "navigate";
-    proxyReqOpts.headers["sec-fetch-site"] = "none";
-    proxyReqOpts.headers["sec-fetch-user"] = "?1";
-    proxyReqOpts.headers["upgrade-insecure-requests"] = "1";
-    proxyReqOpts.headers["Connection"] = "keep-alive";
-    return proxyReqOpts;
-  },
-  userResDecorator: function(proxyRes, proxyResData, req, res) {
-    res.status(proxyRes.statusCode);
-
-    return proxyResData;
-  },
-  proxyErrorHandler: function(err, backendRes, next) {
-    console.error('Proxy error connecting to rent.com.au (basic test):', err);
-    if (!backendRes.headersSent) {
-        backendRes.status(502).send('Proxy error (basic test): Could not connect to the target service.');
-    } else {
-        if (!backendRes.writableEnded) {
-            backendRes.end();
-        }
-    }
-  }
-}));
+});
 
 app.use('/scrape-html', proxy(
   (req) => {
