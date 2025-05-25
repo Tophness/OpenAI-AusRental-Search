@@ -357,7 +357,7 @@ app.use('/rentdc', async (req, res) => {
     return res.status(204).end();
   }
 
-  const targetBaseUrl = 'https://www.rent.com.au/properties';
+  const targetBaseUrl = 'http://www.rent.com.au/properties';
   // req.url will be the path and query string after /rentdc
   // e.g., if client calls /rentdc/werrington-nsw-2747?bedrooms=1
   // req.url will be /werrington-nsw-2747?bedrooms=1
