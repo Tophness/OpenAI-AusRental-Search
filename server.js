@@ -347,12 +347,18 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
     proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
     proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
     proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
+    proxyReqOpts.headers["Cookie"] = "";
     proxyReqOpts.headers["Referer"] = "https://www.rent.com.au/";
 	proxyReqOpts.headers['Alt-Used'] = 'www.rent.com.au';
 
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
+    res.set("Access-Control-Allow-Origin","*");
+    res.set("Access-Control-Allow-Methods","*");
+    res.set("Access-Control-Allow-Headers","*");
+    res.set("Access-Control-Allow-Credentials","true");
+
     if (proxyRes.statusCode === 200 && proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('text/html')) {
       res.set("content-type", "application/json; charset=utf-8");
       let returnJSON = extractListingDetails(proxyResData.toString('utf8'));
@@ -378,6 +384,34 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
     console.error('Proxy error connecting to rent.com.au:', err);
     if (!backendRes.headersSent) {
         backendRes.status(502).send('Proxy error: Could not connect to the target service.');
+    } else {
+        if (!backendRes.writableEnded) {
+            backendRes.end();
+        }
+    }
+  }
+}));
+
+app.use('/test-rentdc-basic', proxy('https://www.rent.com.au', {
+  proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+    proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
+    proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
+    proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
+    return proxyReqOpts;
+  },
+  userResDecorator: function(proxyRes, proxyResData, req, res) {
+    res.set("Access-Control-Allow-Origin","*");
+    res.set("Access-Control-Allow-Methods","*");
+    res.set("Access-Control-Allow-Headers","*");
+    res.set("Access-Control-Allow-Credentials","true");
+    res.status(proxyRes.statusCode);
+
+    return proxyResData;
+  },
+  proxyErrorHandler: function(err, backendRes, next) {
+    console.error('Proxy error connecting to rent.com.au (basic test):', err);
+    if (!backendRes.headersSent) {
+        backendRes.status(502).send('Proxy error (basic test): Could not connect to the target service.');
     } else {
         if (!backendRes.writableEnded) {
             backendRes.end();
