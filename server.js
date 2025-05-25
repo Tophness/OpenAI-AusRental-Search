@@ -345,7 +345,9 @@ app.use((req, res, next) => {
 app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
     srcReq.url = '/properties' + srcReq.url;
+	proxyReqOpts.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36';
     proxyReqOpts.headers["Accept"] = "text/html";
+	proxyReqOpts.headers['Accept-Language'] = 'en-US,en;q=0.9';
     proxyReqOpts.headers["Cookie"] = "";
     return proxyReqOpts;
   },
