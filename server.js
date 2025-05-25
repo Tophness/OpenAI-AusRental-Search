@@ -371,7 +371,7 @@ app.use('/rentdc', async (req, res) => {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
-    "Referer": "https://www.rent.com.au/", // Adding a referer can sometimes help
+    "Referer": "http://www.rent.com.au/", // Adding a referer can sometimes help
     "DNT": "1", // Do Not Track
     "Upgrade-Insecure-Requests": "1",
     // "Connection": "keep-alive", // Axios handles this with its agent
@@ -384,7 +384,7 @@ app.use('/rentdc', async (req, res) => {
     });
     const combinedAgent = new SocksProxyAgent(socksProxy, { agent: httpsAgentWithNoStrictSSL });
     const response = await axios.get(targetUrl, {
-      // httpAgent: agent,
+      httpAgent: agent,
       // httpsAgent: agent,
       httpsAgent: combinedAgent,
       headers: headers,
