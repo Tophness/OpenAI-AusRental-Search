@@ -384,10 +384,9 @@ app.use('/rentdc', async (req, res) => {
     });
     const combinedAgent = new SocksProxyAgent(socksProxy, { agent: httpsAgentWithNoStrictSSL });
     const response = await axios.get(targetUrl, {
-      // httpAgent: agent, // For HTTP, SOCKS agent is enough
-      // httpsAgent: agent, // For HTTPS, use the combined agent or directly the SOCKS agent if no custom https.Agent needed
-      httpsAgent: combinedAgent, // Use this if you need to combine with other https.Agent options
-
+      // httpAgent: agent,
+      // httpsAgent: agent,
+      httpsAgent: combinedAgent,
       headers: headers,
       timeout: 30000,
     });
@@ -432,28 +431,6 @@ app.use('/rentdc', async (req, res) => {
     }
   }
 });
-
-
-  try {
-    console.log(`Attempting to fetch from rent.com.au via SOCKS5: ${targetUrl}`);
-
-    // !!! WARNING: THIS IS INSECURE. USE ONLY FOR DEBUGGING OR IF YOU FULLY UNDERSTAND THE RISK !!!
-    const httpsAgentWithNoStrictSSL = new https.Agent({
-      rejectUnauthorized: false // This disables SSL certificate verification
-    });
-    // Combine with SOCKS proxy agent
-
-
-    const response = await axios.get(targetUrl, {
-      // httpAgent: agent, // For HTTP, SOCKS agent is enough
-      // httpsAgent: agent, // For HTTPS, use the combined agent or directly the SOCKS agent if no custom https.Agent needed
-      httpsAgent: combinedAgent, // Use this if you need to combine with other https.Agent options
-      // OR, if SocksProxyAgent correctly forwards https.Agent options or you only need SOCKS:
-      // httpsAgent: agent, // And set process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; globally (see below)
-
-      headers: headers,
-      timeout: 30000,
-    });
 
 app.use('/scrape-html', proxy(
   (req) => {
