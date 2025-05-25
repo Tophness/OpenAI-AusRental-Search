@@ -57,26 +57,57 @@ function constructObject(channel, searchLocation, pageSize, page, propertyType, 
 
 function extractListingDetails(html) {
   const $ = cheerio.load(html);
-  let nextPageNum = 2;
+  let nextPageNum = null;
   let currentPageNum = 1;
   let totalListings = 0;
-  const totalList = $('div.listings h1.text-heading strong');
-  if(totalList && totalList.text()){
-    totalListings = parseInt(totalList.text());
+
+  const totalListStrong = $('div.listings h2 strong');
+  if (totalListStrong && totalListStrong.length > 0 && totalListStrong.text()) {
+    totalListings = parseInt(totalListStrong.text().trim(), 10);
   }
+
   try {
-    const activeLink = $('.pge a.-active');
+    const activeLink = $('nav.listing-pagination ul.property-search-pagination-page-numbers li.pge.-num.-active a');
     if (activeLink.length > 0) {
-      currentPageNum = parseInt(activeLink.text().trim());
+      currentPageNum = parseInt(activeLink.text().trim(), 10);
+    } else {
+      const firstPageNumLink = $('nav.listing-pagination ul.property-search-pagination-page-numbers li.pge.-num a').first();
+      if (firstPageNumLink.length > 0){
+          const pageNumText = firstPageNumLink.text().trim();
+          if (parseInt(pageNumText, 10) === 1) {
+              currentPageNum = 1;
+          }
+      }
     }
-    const lastPageElement = $('.listings .ui-pagination li.pge:last-child');
-    const nextPageLink = lastPageElement.find('a[rel="next"]');
-    if (nextPageLink.length !== 0) {
-      const parts = nextPageLink.attr('href').split('/');
-      const lastPart = parts[parts.length - 1];
-      nextPageNum = parseInt(lastPart.replace('p', ''));
+
+    let nextPageHref;
+    const nextButtonLink = $('nav.listing-pagination li.pge.-nav.-reverse a[rel="next"]');
+    if (nextButtonLink.length > 0) {
+        nextPageHref = nextButtonLink.attr('href');
+    } else {
+        const currentPageLi = $('nav.listing-pagination ul.property-search-pagination-page-numbers li.pge.-num.-active');
+        if (currentPageLi.length > 0) {
+            const nextPageLi = currentPageLi.next('li.pge.-num');
+            if (nextPageLi.length > 0) {
+                const nextPageLinkInNumbers = nextPageLi.find('a');
+                if (nextPageLinkInNumbers.length > 0) {
+                    nextPageHref = nextPageLinkInNumbers.attr('href');
+                }
+            }
+        }
     }
-  } catch (error) {}
+
+    if (nextPageHref) {
+      const pathPart = nextPageHref.split('?')[0];
+      const urlSegments = pathPart.split('/');
+      const pageIndicatorSegment = urlSegments.find(segment => /^p\d+$/.test(segment));
+      if (pageIndicatorSegment) {
+        nextPageNum = parseInt(pageIndicatorSegment.substring(1), 10);
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing pagination for rent.com.au:', error);
+  }
 
   const returnJSON = {
     totalListings: totalListings,
@@ -85,50 +116,55 @@ function extractListingDetails(html) {
     listings: []
   };
 
-  $('article.property-cell').each((index, element) => {
+  $('article.property-cell.-normal').each((index, element) => {
+    if ($(element).hasClass('interstitial-ad')) {
+        return;
+    }
+
     const address = $(element).find('h2.address').text().trim();
     const imageUrl = $(element).find('img.card-photo').attr('src');
     const priceElement = $(element).find('span.price');
-    const propType = $(priceElement).find('.property-type').text().trim();
-    priceElement.find('.property-type').remove();
-    const price = priceElement.text().trim();
-    const ldJsonScripts = $(element).find('script[type="application/ld+json"]').first();
+    const propType = priceElement.find('.property-type').text().trim();
+    const priceElementClone = priceElement.clone();
+    priceElementClone.find('.property-type').remove();
+    const price = priceElementClone.text().trim();
+
+    const ldJsonScriptElement = $(element).find('script[type="application/ld+json"]').first();
     const features = [];
     let description = "";
     let url = "";
 
-    $(element).find('ul.features li.feature').each((index, element) => {
-      const value = $(element).find('span.value').text().trim();
+    $(element).find('ul.features li.feature').each((featIdx, featElement) => {
+      const value = $(featElement).find('span.value').text().trim();
       features.push(value);
     });
 
-    if (ldJsonScripts.length > 0) {
-      let jsonText = ldJsonScripts.html();
-      jsonText = jsonText.replace('//<![CDATA[', '').replace('//]]>', '');
+    if (ldJsonScriptElement.length > 0) {
+      let jsonText = ldJsonScriptElement.html();
+      jsonText = jsonText.replace(/^\s*\/\/\s*<!\[CDATA\[\s*/, '').replace(/\s*\/\/\s*\]\]>\s*$/, '').trim();
       try {
         const json = JSON.parse(jsonText);
-        const isEmpty = Object.keys(json).length === 0;
-
-        if (!isEmpty && json['@type'] !== "RentAction") {
-          description = json.description;
-          url = json.url;
+        if (Object.keys(json).length > 0 && json['@type'] === "Residence") {
+          description = json.description || "";
+          url = json.url || "";
         }
-      } catch (error) {
-        console.error('Error parsing JSON:', error);
+      } catch (e) {
+        console.error('Error parsing LD+JSON for a rent.com.au listing. JSON Text:', jsonText, 'Error:', e);
       }
     }
 
-    const listing = {
-      address: address,
-      imageUrl: imageUrl,
-      price: price,
-      features: features,
-      propType: propType,
-      description: description,
-      url: url
-    };
-
-    returnJSON.listings.push(listing);
+    if (address) {
+      const listing = {
+        address: address,
+        imageUrl: imageUrl,
+        price: price,
+        features: features,
+        propType: propType,
+        description: description,
+        url: url
+      };
+      returnJSON.listings.push(listing);
+    }
   });
 
   return returnJSON;
