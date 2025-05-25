@@ -365,7 +365,7 @@ app.use('/rentdc', async (req, res) => {
   const targetUrl = targetBaseUrl + requestPathAndQuery;
 
   const socksProxy = 'socks5://142.54.237.34:4145'; // Your SOCKS5 proxy
-  //const agent = new SocksProxyAgent(socksProxy);
+  const agent = new SocksProxyAgent(socksProxy);
 
   const headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
