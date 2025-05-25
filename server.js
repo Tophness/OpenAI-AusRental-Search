@@ -344,11 +344,13 @@ app.use((req, res, next) => {
 
 app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
   proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
-    srcReq.url = '/properties' + srcReq.url;
-	proxyReqOpts.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36';
-    proxyReqOpts.headers["Accept"] = "text/html";
-	proxyReqOpts.headers['Accept-Language'] = 'en-US,en;q=0.9';
+    proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
+    proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
+    proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
     proxyReqOpts.headers["Cookie"] = "";
+    proxyReqOpts.headers["Referer"] = "https://www.rent.com.au/";
+	proxyReqOpts.headers['Alt-Used'] = 'www.rent.com.au';
+
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, req, res) {
@@ -356,19 +358,36 @@ app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
     res.set("Access-Control-Allow-Methods","*");
     res.set("Access-Control-Allow-Headers","*");
     res.set("Access-Control-Allow-Credentials","true");
-    if (req.url.indexOf('/properties') !== -1) {
+
+    if (proxyRes.statusCode === 200 && proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('text/html')) {
       res.set("content-type", "application/json; charset=utf-8");
-      res.set("accept", "application/json");
-      let returnJSON = extractListingDetails(proxyResData);
-      if (imgParam && imgParam !== 0) {
-        returnJSON.listings = returnJSON.listings.map(obj => {
-          delete obj.imageUrl;
-          return obj;
-        });
+      let returnJSON = extractListingDetails(proxyResData.toString('utf8'));
+      if (typeof imgParam !== 'undefined' && imgParam === 0) {
+          if (returnJSON.listings) {
+              returnJSON.listings = returnJSON.listings.map(obj => {
+                  delete obj.imageUrl;
+                  return obj;
+              });
+          }
       }
+
       return JSON.stringify(returnJSON);
     } else {
+      if (proxyRes.headers['content-type']) {
+        res.set('Content-Type', proxyRes.headers['content-type']);
+      }
+      res.status(proxyRes.statusCode);
       return proxyResData;
+    }
+  },
+  proxyErrorHandler: function(err, backendRes, next) {
+    console.error('Proxy error connecting to rent.com.au:', err);
+    if (!backendRes.headersSent) {
+        backendRes.status(502).send('Proxy error: Could not connect to the target service.');
+    } else {
+        if (!backendRes.writableEnded) {
+            backendRes.end();
+        }
     }
   }
 }));
