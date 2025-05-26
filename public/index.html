@@ -13,19 +13,19 @@
         <div class="tabs">
             <button class="tab-link active" data-tab="domain">Domain.com.au</button>
             <button class="tab-link" data-tab="rentdc">Rent.com.au</button>
-            <button class="tab-link" data-tab="realestate">Realestate.com.au</button>
+            <button class="tab-link" data-tab="realestate">Realestate.com.au (Old)</button>
+            <button class="tab-link" data-tab="realestategraph">Realestate.com.au (GraphQL)</button>
             <button class="tab-link" data-tab="flatmates">Flatmates.com.au</button>
         </div>
 
-        <!-- Add Filter and Sort Controls here, above the forms or results -->
-        <div class="controls- Sorter">
+        <div class="controls-sorter">
             <div class="filter-group">
                 <label for="filter-address">Filter Addresses (comma-sep, hides if match):</label>
                 <input type="text" id="filter-address" value="room">
             </div>
             <div class="filter-group">
                 <label for="filter-description">Filter Descriptions (comma-sep, hides if match):</label>
-                <input type="text" id="filter-description" value="room for rent,boarding house,shared accommodation,affordable room,furnished room,single room,double room,single bedroom,double bedroom,single boarding room">
+                <input type="text" id="filter-description" value="room for rent,boarding house,shared accommodation,affordable room,furnished room,single room,double room,single bedroom,double bedroom,single boarding room,room letting">
             </div>
 			<div class="filter-group">
 				<label for="filter-property-type-exclude">Exclude Property Types (Ctrl/Cmd + Click for multiple):</label>
@@ -37,7 +37,6 @@
                 <select id="sort-results">
                     <option value="price-asc">Price (Low-High)</option>
                     <option value="price-desc">Price (High-Low)</option>
-                    <!-- Add more sort options later if needed -->
                 </select>
             </div>
         </div>
@@ -46,9 +45,8 @@
         <div id="domain" class="tab-content active">
             <h2>Search Domain.com.au</h2>
             <form id="domain-form">
-                <!-- Form fields as before -->
                 <div class="form-grid">
-                    <div><label for="domain-suburb">Suburbs (suburb-state-postcode, comma-separated):</label><input type="text" id="domain-suburb" name="suburb" placeholder="chatswood-nsw-2067,gordon-nsw-2072", value="sydney-region-nsw"></div>
+                    <div><label for="domain-suburb">Suburbs (suburb-state-postcode, comma-separated):</label><input type="text" id="domain-suburb" name="suburb" placeholder="chatswood-nsw-2067,gordon-nsw-2072" value="sydney-region-nsw"></div>
                     <div><label for="domain-bedrooms">Bedrooms (e.g., 2 or 2-4, 1-any):</label><input type="text" id="domain-bedrooms" name="bedrooms" placeholder="2-3" value="1"></div>
                     <div><label for="domain-price">Price (e.g., 500 or 200-500):</label><input type="text" id="domain-price" name="price" placeholder="400-600" value="150-300"></div>
                     <div><label for="domain-features">Features (comma-separated):</label><input type="text" id="domain-features" name="features" placeholder="petsallowed,airconditioning">
@@ -65,7 +63,6 @@
         <div id="rentdc" class="tab-content">
             <h2>Search Rent.com.au</h2>
             <form id="rentdc-form">
-                 <!-- Form fields as before -->
                  <div class="form-grid">
                     <div><label for="rentdc-suburbs">Suburbs (suburb postcode, comma-separated):</label><input type="text" id="rentdc-suburbs" name="suburbs" required placeholder="fairfield 2165,penrith 2750"></div>
                     <div><label for="rentdc-surrounding_suburbs">Include Surrounding (1 for yes, 0 for no):</label><input type="number" id="rentdc-surrounding_suburbs" name="surrounding_suburbs" value="0" min="0" max="1"></div>
@@ -82,11 +79,10 @@
         </div>
 
         <div id="realestate" class="tab-content">
-            <h2>Search Realestate.com.au</h2>
+            <h2>Search Realestate.com.au (Old API)</h2>
             <form id="realestate-form">
-                <!-- Form fields as before -->
                 <div class="form-grid">
-                    <div><label for="realestate-searchLocation">Location (suburb, postcode, state, comma-separated):</label><input type="text" id="realestate-searchLocation" name="searchLocation" required placeholder="Penrith, NSW"></div>
+                    <div><label for="realestate-searchLocation">Location (suburb, state postcode):</label><input type="text" id="realestate-searchLocation" name="searchLocation" required placeholder="Penrith, NSW 2750" value="Eastwood, NSW 2122"></div>
                     <div><label for="realestate-propertyType">Property Type:</label>
                         <select id="realestate-propertyType" name="propertyType">
                             <option value="all">All</option>
@@ -97,38 +93,79 @@
                             <option value="unit">Unit</option>
                         </select>
                     </div>
-                    <div><label for="realestate-minBedrooms">Min Bedrooms:</label><input type="number" id="realestate-minBedrooms" name="minBedrooms" placeholder="1"></div>
-                    <div><label for="realestate-minBathrooms">Min Bathrooms:</label><input type="number" id="realestate-minBathrooms" name="minBathrooms" placeholder="1"></div>
-                    <div><label for="realestate-minParkingSpaces">Min Parking Spaces:</label><input type="number" id="realestate-minParkingSpaces" name="minParkingSpaces" placeholder="0"></div>
-                    <div><label for="realestate-minimumPrice">Min Price:</label><input type="number" id="realestate-minimumPrice" name="minimumPrice" placeholder="200"></div>
-                    <div><label for="realestate-maximumPrice">Max Price:</label><input type="number" id="realestate-maximumPrice" name="maximumPrice" placeholder="600"></div>
-                    <div><label><input type="checkbox" name="surroundingSuburbs" checked> Surrounding Suburbs</label></div>
-                    <div><label><input type="checkbox" name="furnished"> Furnished</label></div>
-                    <div><label><input type="checkbox" name="petsAllowed"> Pets Allowed</label></div>
-                    <div><label><input type="checkbox" name="swimmingPool"> Swimming Pool</label></div>
-                    <div><label><input type="checkbox" name="garage"> Garage</label></div>
-                    <div><label><input type="checkbox" name="balcony"> Balcony</label></div>
-                    <div><label><input type="checkbox" name="outdoorArea"> Outdoor Area</label></div>
-                    <div><label><input type="checkbox" name="ensuite"> Ensuite</label></div>
-                    <div><label><input type="checkbox" name="dishwasher"> Dishwasher</label></div>
-                    <div><label><input type="checkbox" name="study"> Study</label></div>
-                    <div><label><input type="checkbox" name="builtInRobes"> Built-in Robes</label></div>
-                    <div><label><input type="checkbox" name="airConditioning"> Air Conditioning</label></div>
-                    <div><label><input type="checkbox" name="heating"> Heating</label></div>
+                    <div><label for="realestate-minBedrooms">Min Bedrooms:</label><input type="number" id="realestate-minBedrooms" name="minBedrooms" placeholder="1" value="1"></div>
+                    <div><label for="realestate-minBathrooms">Min Bathrooms:</label><input type="number" id="realestate-minBathrooms" name="minBathrooms" placeholder="1" value="1"></div>
+                    <div><label for="realestate-minParkingSpaces">Min Parking Spaces:</label><input type="number" id="realestate-minParkingSpaces" name="minParkingSpaces" placeholder="0" value="1"></div>
+                    <div><label for="realestate-minimumPrice">Min Price:</label><input type="number" id="realestate-minimumPrice" name="minimumPrice" placeholder="200" value="150"></div>
+                    <div><label for="realestate-maximumPrice">Max Price:</label><input type="number" id="realestate-maximumPrice" name="maximumPrice" placeholder="600" value="300"></div>
+                    <div><label><input type="checkbox" name="surroundingSuburbs" value="true" checked> Surrounding Suburbs</label></div>
+                    <div><label><input type="checkbox" name="furnished" value="true"> Furnished</label></div>
+                    <div><label><input type="checkbox" name="petsAllowed" value="true"> Pets Allowed</label></div>
+                    <div><label><input type="checkbox" name="swimmingPool" value="true"> Swimming Pool</label></div>
+                    <div><label><input type="checkbox" name="garage" value="true"> Garage</label></div>
+                    <div><label><input type="checkbox" name="balcony" value="true"> Balcony</label></div>
+                    <div><label><input type="checkbox" name="outdoorArea" value="true"> Outdoor Area</label></div>
+                    <div><label><input type="checkbox" name="ensuite" value="true"> Ensuite</label></div>
+                    <div><label><input type="checkbox" name="dishwasher" value="true"> Dishwasher</label></div>
+                    <div><label><input type="checkbox" name="study" value="true"> Study</label></div>
+                    <div><label><input type="checkbox" name="builtInRobes" value="true"> Built-in Robes</label></div>
+                    <div><label><input type="checkbox" name="airConditioning" value="true"> Air Conditioning</label></div>
+                    <div><label><input type="checkbox" name="heating" value="true"> Heating</label></div>
                     <div><label for="realestate-images">Number of Images (0 to disable):</label><input type="number" id="realestate-images" name="images" value="2"></div>
                     <div><label for="realestate-descriptionLength">Description Length (0 to disable):</label><input type="number" id="realestate-descriptionLength" name="descriptionLength" value="200"></div>
                     <input type="hidden" name="channel" value="rent">
                     <input type="hidden" name="page" value="1">
-                    <input type="hidden" name="pageSize" value="20"> {/* Default page size for REA */}
+                    <input type="hidden" name="pageSize" value="20">
                 </div>
-                <button type="submit">Search Realestate.com.au</button>
+                <button type="submit">Search Realestate.com.au (Old)</button>
             </form>
         </div>
+        
+        <div id="realestategraph" class="tab-content">
+            <h2>Search Realestate.com.au (GraphQL API)</h2>
+            <form id="realestategraph-form">
+                <div class="form-grid">
+                    <div><label for="realgraph-locations">Locations (suburb, state postcode; semi-colon separated for multiple):</label>
+                        <input type="text" id="realgraph-locations" name="locations" placeholder="Eastwood, NSW 2122;Epping, NSW 2121" value="Eastwood, NSW 2122">
+                    </div>
+                    <div><label for="realgraph-propertyTypes">Property Types (comma-sep: house, townhouse, unit apartment, villa):</label>
+                        <input type="text" id="realgraph-propertyTypes" name="propertyTypes" placeholder="house,townhouse" value="house,townhouse,unit apartment,villa">
+                    </div>
+                    <div><label for="realgraph-minPrice">Min Price:</label><input type="number" id="realgraph-minPrice" name="minPrice" placeholder="50" value="150"></div>
+                    <div><label for="realgraph-maxPrice">Max Price:</label><input type="number" id="realgraph-maxPrice" name="maxPrice" placeholder="5000" value="300"></div>
+                    <div><label for="realgraph-minBedrooms">Min Bedrooms:</label><input type="number" id="realgraph-minBedrooms" name="minBedrooms" placeholder="1" value="1"></div>
+                    <div><label for="realgraph-maxBedrooms">Max Bedrooms:</label><input type="number" id="realgraph-maxBedrooms" name="maxBedrooms" placeholder="5" value="5"></div>
+                    <div><label for="realgraph-minBathrooms">Min Bathrooms:</label><input type="number" id="realgraph-minBathrooms" name="minBathrooms" placeholder="1" value="1"></div>
+                    <div><label for="realgraph-minParkingSpaces">Min Parking Spaces:</label><input type="number" id="realgraph-minParkingSpaces" name="minParkingSpaces" placeholder="1" value="1"></div>
+                    <div><label for="realgraph-availableDateMax">Available Before (YYYY-MM-DD):</label><input type="date" id="realgraph-availableDateMax" name="availableDateMax"></div>
+                    <div><label for="realgraph-keywords">Keywords (comma-separated):</label><input type="text" id="realgraph-keywords" name="keywords" placeholder="pool,air conditioning"></div>
+                     <div><label for="realgraph-sortType">Sort By:</label>
+                        <select id="realgraph-sortType" name="sortType">
+                            <option value="price-asc" selected>Price (Low-High)</option>
+                            <option value="price-desc">Price (High-Low)</option>
+                            <option value="date-new-to-old">Date (Newest)</option>
+                            <option value="date-old-to-new">Date (Oldest)</option>
+                            <option value="default">Default/Relevance</option>
+                        </select>
+                    </div>
+                    <div><label for="realgraph-pageSize">Page Size:</label><input type="number" id="realgraph-pageSize" name="pageSize" value="25" min="1" max="50"></div>
+
+                    <div><label><input type="checkbox" name="surroundingSuburbs" value="true" checked> Surrounding Suburbs</label></div>
+                    <div><label><input type="checkbox" name="furnished" value="true"> Furnished</label></div>
+                    <div><label><input type="checkbox" name="petsAllowed" value="true"> Pets Allowed</label></div>
+                    
+                    <div><label for="realgraph-images">Client: Num Images (0 to disable):</label><input type="number" id="realgraph-images" name="images" value="8"></div>
+                    <div><label for="realgraph-descriptionLength">Client: Desc Length (0 to disable):</label><input type="number" id="realgraph-descriptionLength" name="descriptionLength" value="300"></div>
+                    <input type="hidden" name="page" value="1">
+                </div>
+                <button type="submit">Search Realestate.com.au (GraphQL)</button>
+            </form>
+        </div>
+
 
         <div id="flatmates" class="tab-content">
             <h2>Search Flatmates.com.au</h2>
             <form id="flatmates-form">
-                <!-- Form fields as before -->
                 <div class="form-grid">
                     <div><label for="flatmates-locations">Locations (suburb-postcode, use + for multiple):</label><input type="text" id="flatmates-locations" name="locations" placeholder="penrith-2750+parramatta-2150"></div>
                     <div><label for="flatmates-minBudget">Min Budget:</label><input type="text" id="flatmates-minBudget" name="minBudget" placeholder="150"></div>
@@ -162,14 +199,14 @@
                             <option value="shared-room">Shared Room</option>
                         </select>
                     </div>
-                    <div><label><input type="checkbox" name="billsIncluded"> Bills Included</label></div>
-                    <div><label><input type="checkbox" name="pets"> Pets Allowed</label></div>
-                    <div><label><input type="checkbox" name="smokers"> Smokers Allowed</label></div>
-                    <div><label><input type="checkbox" name="couples" value="couples"> Couples</label></div> {/* Removed name="gender" as it conflicts if multiple checkboxes set gender */}
-                    <div><label><input type="checkbox" name="shareHouses" checked> Share Houses</label></div>
-                    <div><label><input type="checkbox" name="wholeProperties"> Whole Properties</label></div>
-                    <div><label><input type="checkbox" name="studios"> Studios</label></div>
-                    <div><label><input type="checkbox" name="grannyFlats"> Granny Flats</label></div>
+                    <div><label><input type="checkbox" name="billsIncluded" value="true"> Bills Included</label></div>
+                    <div><label><input type="checkbox" name="pets" value="true"> Pets Allowed</label></div>
+                    <div><label><input type="checkbox" name="smokers" value="true"> Smokers Allowed</label></div>
+                    <div><label><input type="checkbox" name="couples" value="couples"> Couples</label></div>
+                    <div><label><input type="checkbox" name="shareHouses" value="true" checked> Share Houses</label></div>
+                    <div><label><input type="checkbox" name="wholeProperties" value="true"> Whole Properties</label></div>
+                    <div><label><input type="checkbox" name="studios" value="true"> Studios</label></div>
+                    <div><label><input type="checkbox" name="grannyFlats" value="true"> Granny Flats</label></div>
                     <div><label for="flatmates-images">Number of Images (0 to disable):</label><input type="number" id="flatmates-images" name="images" value="2"></div>
                     <div><label for="flatmates-descriptionLength">Description Length (0 to disable):</label><input type="number" id="flatmates-descriptionLength" name="descriptionLength" value="200"></div>
                     <input type="hidden" name="page" value="1">

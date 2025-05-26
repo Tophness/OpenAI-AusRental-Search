@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const filterPropertyTypeExcludeSelect = document.getElementById('filter-property-type-exclude');
     const tabs = document.querySelectorAll('.tab-link');
     const tabContents = document.querySelectorAll('.tab-content');
-    const loadingMessageDiv = document.getElementById('loading-message'); // Updated ID
+    const loadingMessageDiv = document.getElementById('loading-message');
     const errorDiv = document.getElementById('error-message');
     const resultsContainer = document.getElementById('results-container');
     const paginationControls = document.getElementById('pagination-controls');
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortResultsSelect = document.getElementById('sort-results');
 
     // --- State Variables ---
-    let currentApiSource = 'domain';
+    let currentApiSource = 'domain'; // Default active tab
     let allFetchedListings = [];
     let processedListings = [];
 	let lightboxOverlay = null;
@@ -29,15 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	let currentLightboxImageIndex = 0;
     
     let clientSideCurrentPage = 1;
-    const CLIENT_SIDE_ITEMS_PER_PAGE = 10; // Or make this configurable
+    const CLIENT_SIDE_ITEMS_PER_PAGE = 10;
 
-    // Rate Limiting for description fetching (user configurable - constants for now)
-    const DESCRIPTION_FETCH_DELAY_MS = 100; // 0.1 second delay between fetches
-    const DESCRIPTION_FETCH_BATCH_SIZE = 10; // Process 10, then apply a longer delay if needed. Or just delay every N. Let's use 1s every 100 results as requested.
+    const DESCRIPTION_FETCH_DELAY_MS = 100;
+    const DESCRIPTION_FETCH_BATCH_SIZE = 10;
     const BULK_DELAY_MS = 1000;
-    const BULK_DELAY_BATCH_SIZE = 100; // Wait 1 second every 100 description fetches
+    const BULK_DELAY_BATCH_SIZE = 100;
 
-    let initialFormData = null; // To store the primary form data
+    let initialFormData = null;
 
     // --- Helper: Debounce ---
     function debounce(func, delay) {
@@ -54,7 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(tc => tc.classList.remove('active'));
             tab.classList.add('active');
-            document.getElementById(tab.dataset.tab).classList.add('active');
+            const targetTabContent = document.getElementById(tab.dataset.tab);
+            if (targetTabContent) {
+                targetTabContent.classList.add('active');
+            }
             currentApiSource = tab.dataset.tab;
             clearResultsAndState();
         });
@@ -68,7 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
         errorDiv.style.display = 'none';
         loadingMessageDiv.style.display = 'none';
         clientSideCurrentPage = 1;
-		filterPropertyTypeExcludeSelect.innerHTML = '';
+		filterPropertyTypeExcludeSelect.innerHTML = ''; // Clear existing options
+		// Reset selection for multi-select if needed, though clearing options does this
 		Array.from(filterPropertyTypeExcludeSelect.options).forEach(option => option.selected = false);
     }
 
@@ -76,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            clearResultsAndState();
-            initialFormData = new FormData(form);
+            clearResultsAndState(); // Clear previous results and filters
+            initialFormData = new FormData(form); // Store form data from the submitted form
             fetchAllDataProcess();
         });
     });
@@ -89,12 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
     sortResultsSelect.addEventListener('change', processAndDisplayListings);
 
 	function createLightbox() {
-		if (document.getElementById('image-lightbox-overlay')) return; // Already created
+		if (document.getElementById('image-lightbox-overlay')) return;
 
 		lightboxOverlay = document.createElement('div');
 		lightboxOverlay.id = 'image-lightbox-overlay';
 		lightboxOverlay.classList.add('lightbox-overlay');
-		lightboxOverlay.style.display = 'none'; // Start hidden
+		lightboxOverlay.style.display = 'none';
 
 		const content = document.createElement('div');
 		content.classList.add('lightbox-content');
@@ -105,31 +108,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		const closeButton = document.createElement('button');
 		closeButton.classList.add('lightbox-close');
-		closeButton.innerHTML = '×'; // '×' character
+		closeButton.innerHTML = '×';
 		closeButton.title = 'Close (Esc)';
 		closeButton.onclick = closeLightbox;
 
 		lightboxPrevButton = document.createElement('button');
 		lightboxPrevButton.classList.add('lightbox-nav', 'lightbox-prev');
-		lightboxPrevButton.innerHTML = '❮'; // '❮'
+		lightboxPrevButton.innerHTML = '❮';
 		lightboxPrevButton.title = 'Previous (Left Arrow)';
 		lightboxPrevButton.onclick = () => showLightboxImage(currentLightboxImageIndex - 1);
 
 		lightboxNextButton = document.createElement('button');
 		lightboxNextButton.classList.add('lightbox-nav', 'lightbox-next');
-		lightboxNextButton.innerHTML = '❯'; // '❯'
+		lightboxNextButton.innerHTML = '❯';
 		lightboxNextButton.title = 'Next (Right Arrow)';
 		lightboxNextButton.onclick = () => showLightboxImage(currentLightboxImageIndex + 1);
 
 		content.appendChild(lightboxImageElement);
-		content.appendChild(closeButton); // Append close button to content for better positioning relative to image
-		lightboxOverlay.appendChild(content); // Append content to overlay
-		lightboxOverlay.appendChild(lightboxPrevButton); // Nav buttons are children of overlay for edge positioning
+		content.appendChild(closeButton);
+		lightboxOverlay.appendChild(content);
+		lightboxOverlay.appendChild(lightboxPrevButton);
 		lightboxOverlay.appendChild(lightboxNextButton);
 
 		document.body.appendChild(lightboxOverlay);
 
-		// Close lightbox if clicking on the overlay itself (but not on the content/image)
 		lightboxOverlay.addEventListener('click', function(event) {
 			if (event.target === lightboxOverlay) {
 				closeLightbox();
@@ -140,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	function openLightbox(imagesArray, startIndex) {
 		if (!lightboxOverlay) createLightbox();
 
-		currentLightboxImages = imagesArray;
+		currentLightboxImages = imagesArray.map(img => (typeof img === 'object' && img.templatedUrl) ? img.templatedUrl.replace('{size}', '1280x960') : img.replace('{size}', '1280x960'));
 		currentLightboxImageIndex = startIndex;
 		
 		showLightboxImage(currentLightboxImageIndex);
@@ -155,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		currentLightboxImageIndex = (index + currentLightboxImages.length) % currentLightboxImages.length;
 		lightboxImageElement.src = currentLightboxImages[currentLightboxImageIndex];
 
-		// Show/hide nav buttons
 		if (currentLightboxImages.length <= 1) {
 			lightboxPrevButton.classList.add('hidden');
 			lightboxNextButton.classList.add('hidden');
@@ -184,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function populatePropertyTypeExcludeFilter(apiSource, listings) {
-		filterPropertyTypeExcludeSelect.innerHTML = '';
+		filterPropertyTypeExcludeSelect.innerHTML = ''; // Clear previous options
 		const availableTypes = new Set();
 
 		listings.forEach(listing => {
@@ -196,14 +197,19 @@ document.addEventListener('DOMContentLoaded', () => {
 				case 'rentdc':
 					type = listing.propType;
 					break;
-				case 'realestate':
+				case 'realestate': // Old API
 					type = listing.propertyType;
 					break;
+                case 'realestategraph': // New GraphQL API
+                    type = listing.propertyType;
+                    break;
 				case 'flatmates':
 					if (listing.rooms?.toLowerCase().includes('share house')) type = 'Share House';
 					else if (listing.rooms?.toLowerCase().includes('studio')) type = 'Studio';
 					else if (listing.rooms?.toLowerCase().includes('whole property')) type = 'Whole Property';
 					else if (listing.rooms?.toLowerCase().includes('granny flat')) type = 'Granny Flat';
+                    else if (listing.rooms?.toLowerCase().includes('homestay')) type = 'Homestay';
+                    else if (listing.rooms?.toLowerCase().includes('student accommodation')) type = 'Student Accommodation';
 					break;
 			}
 			if (type && typeof type === 'string' && type.trim() !== '') {
@@ -220,22 +226,31 @@ document.addEventListener('DOMContentLoaded', () => {
 			const option = document.createElement('option');
 			option.value = type;
 			option.textContent = type;
-			// option.selected = false; // By default, nothing is selected for exclusion
 			filterPropertyTypeExcludeSelect.appendChild(option);
 		});
+        // Default exclusion for "Acreage / Semi-Rural" can be set here if needed
+        // Example:
+        // const acreageOption = Array.from(filterPropertyTypeExcludeSelect.options).find(opt => opt.value === "Acreage / Semi-Rural");
+        // if (acreageOption) acreageOption.selected = true;
 
-		filterPropertyTypeExcludeSelect.value = ["Acreage / Semi-Rural"];
+		// Default exclude specific types if they exist
+		const defaultExclusions = ["Acreage / Semi-Rural", "New House & Land", "Retirement Living"];
+		defaultExclusions.forEach(exclusion => {
+			const optionToExclude = Array.from(filterPropertyTypeExcludeSelect.options).find(opt => opt.value === exclusion);
+			if (optionToExclude) {
+				optionToExclude.selected = true;
+			}
+		});
+
 	}
 
-    // --- Main Data Fetching and Processing Logic ---
     async function fetchAllDataProcess() {
-        if (!initialFormData && document.getElementById(`${currentApiSource}-form`)) { // Check if initialFormData is set, if not, try to get it from current form
+        if (!initialFormData && document.getElementById(`${currentApiSource}-form`)) {
             initialFormData = new FormData(document.getElementById(`${currentApiSource}-form`));
-        } else if (!initialFormData) { // If still no initialFormData (e.g. form doesn't exist, unlikely here)
+        } else if (!initialFormData) {
              showError("Form data is not available. Please submit a search.");
              return;
         }
-
 
         loadingMessageDiv.textContent = 'Fetching initial listings...';
         loadingMessageDiv.style.display = 'block';
@@ -244,22 +259,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let listingsFromApi = [];
         let currentPageForApi = 1;
         let hasMorePages = true;
+        let totalApiPages = 1; // Initialize for APIs that provide total pages
 
         try {
             while (hasMorePages) {
-                loadingMessageDiv.textContent = `Fetching listings (API Page ${currentPageForApi})...`;
+                loadingMessageDiv.textContent = `Fetching listings (API Page ${currentPageForApi}${totalApiPages > 1 ? ` of ${totalApiPages}`: ''})...`;
                 
-                // --- CORRECTED FormData HANDLING ---
                 let formDataForPage;
                 if (initialFormData) {
-                    formDataForPage = new FormData(); // Create a new empty FormData
-                    // Copy entries from initialFormData
+                    formDataForPage = new FormData();
                     for (const [key, value] of initialFormData.entries()) {
                         formDataForPage.append(key, value);
                     }
                 } else { 
-                    // This case should be less likely now due to the check at the beginning of the function,
-                    // but as a fallback, try to get it from the current form if initialFormData was somehow cleared.
                     const currentFormElement = document.getElementById(`${currentApiSource}-form`);
                     if (currentFormElement) {
                         formDataForPage = new FormData(currentFormElement);
@@ -267,9 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error("Could not retrieve form data for API request.");
                     }
                 }
-                // --- END CORRECTED FormData HANDLING ---
                 
-                // Update page number for the API request
                 if (formDataForPage.has('page')) {
                     formDataForPage.set('page', currentPageForApi);
                 } else {
@@ -278,39 +288,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const apiResponse = await makeApiRequest(currentApiSource, formDataForPage);
 
-                // ... (rest of the while loop logic for processing apiResponse and determining hasMorePages)
-                // ... (This part from the previous correct answer should be fine)
+                if (apiResponse.errors) { // Handle GraphQL errors
+                    throw new Error(`API Error: ${apiResponse.errors.map(e => e.message).join(', ')}`);
+                }
 
                 let newPageListings = [];
                 switch (currentApiSource) {
                     case 'domain':
                         newPageListings = apiResponse.listings ? Object.values(apiResponse.listings).map(l => ({ ...l.listingModel, original_api_source: 'domain' })) : [];
-                        hasMorePages = currentPageForApi < (apiResponse.totalPages || 1);
+                        totalApiPages = apiResponse.totalPages || 1;
+                        hasMorePages = currentPageForApi < totalApiPages;
                         if (currentPageForApi === 1 && newPageListings.length === 0 && (apiResponse.totalListings === 0 || Object.keys(apiResponse.listings || {}).length === 0)) {
-                            // If it's the first page and absolutely no results, stop.
                             hasMorePages = false;
                         }
                         break;
                     case 'rentdc':
                         newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'rentdc' }));
-                        hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / 20);
+                        totalApiPages = Math.ceil((apiResponse.totalListings || 0) / 20); // rent.com.au typical page size
+                        hasMorePages = currentPageForApi < totalApiPages;
                         if (apiResponse.nextPageNum && apiResponse.nextPageNum <= currentPageForApi) hasMorePages = false;
                         if (currentPageForApi === 1 && newPageListings.length === 0 && apiResponse.totalListings === 0) {
                             hasMorePages = false;
                         }
                         break;
-                    case 'realestate':
+                    case 'realestate': // Old API
                         newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'realestate' }));
-                        const pageSizeRea = parseInt(formDataForPage.get('pageSize') || '20');
-                        hasMorePages = currentPageForApi < Math.ceil((apiResponse.totalListings || 0) / pageSizeRea);
+                        const pageSizeReaOld = parseInt(formDataForPage.get('pageSize') || '20');
+                        totalApiPages = Math.ceil((apiResponse.totalListings || 0) / pageSizeReaOld);
+                        hasMorePages = currentPageForApi < totalApiPages;
                          if (currentPageForApi === 1 && newPageListings.length === 0 && apiResponse.totalListings === 0) {
+                            hasMorePages = false;
+                        }
+                        break;
+                    case 'realestategraph': // New GraphQL API
+                        newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'realestategraph' }));
+                        totalApiPages = apiResponse.totalPages || 1;
+                        hasMorePages = currentPageForApi < totalApiPages;
+                        if (currentPageForApi === 1 && newPageListings.length === 0 && apiResponse.totalListings === 0) {
                             hasMorePages = false;
                         }
                         break;
                     case 'flatmates':
                         newPageListings = (apiResponse.listings || []).map(l => ({ ...l, original_api_source: 'flatmates' }));
-                        hasMorePages = !!apiResponse.nextPage;
-                        if (currentPageForApi === 1 && newPageListings.length === 0 && !apiResponse.nextPage) { // if no listings on page 1 and no next page
+                        hasMorePages = !!apiResponse.nextPage; // Flatmates uses a direct 'nextPage' indicator
+                        totalApiPages = hasMorePages ? currentPageForApi + 1 : currentPageForApi; // Approximation
+                        if (currentPageForApi === 1 && newPageListings.length === 0 && !apiResponse.nextPage) {
                             hasMorePages = false;
                         }
                         break;
@@ -322,7 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     listingsFromApi.push(...newPageListings);
                 }
 
-
                 if (hasMorePages) {
                     currentPageForApi++;
                 } else {
@@ -332,17 +353,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn("Safety break: Exceeded 50 pages for API fetch.");
                     hasMorePages = false;
                 }
-            } // End of while loop
+            }
             
             allFetchedListings = listingsFromApi;
 
             if (allFetchedListings.length === 0) {
                 loadingMessageDiv.textContent = 'No listings found from the API.';
-                 // No need to fetch descriptions if no primary listings
-                processAndDisplayListings(); // This will show "No listings match..."
-                return; // Exit early
+                processAndDisplayListings();
+                return;
             }
-
 
             if (currentApiSource === 'domain' || currentApiSource === 'rentdc') {
                 await fetchAndScrapeDescriptions(allFetchedListings, currentApiSource);
@@ -355,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error in fetchAllDataProcess:', error);
             showError(`Failed during data fetching: ${error.message}`);
         } finally {
-            if (allFetchedListings.length > 0) { // Only hide loading if we actually processed something
+            if (allFetchedListings.length > 0 || errorDiv.style.display === 'block') {
                 loadingMessageDiv.style.display = 'none';
             }
         }
@@ -366,9 +385,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams();
         for (const [key, value] of formData.entries()) {
             if (value !== null && value !== '' && value !== undefined) {
-                params.append(key, value);
+                 // For checkboxes, FormData includes them if checked with their value.
+                // If not checked, they are not included.
+                // We need to ensure boolean 'true'/'false' for some proxy params if they are present.
+                if (typeof value === 'boolean') {
+                    params.append(key, value.toString());
+                } else if (formData.get(key) === "" && (key === "surroundingSuburbs" || key === "furnished" || key === "petsAllowed")) {
+                    // If a checkbox is present but empty (can happen if manually added to params), treat as false
+                    params.append(key, "false");
+                }
+                else {
+                    params.append(key, value);
+                }
             }
         }
+
+        // Explicitly add checkbox values if they are not in formData (meaning they were unchecked)
+        // This is mainly for the GraphQL endpoint which might expect these boolean flags.
+        if (apiSource === 'realestategraph') {
+            if (!formData.has('surroundingSuburbs')) params.set('surroundingSuburbs', 'false');
+            if (!formData.has('furnished')) params.set('furnished', 'false');
+            if (!formData.has('petsAllowed')) params.set('petsAllowed', 'false');
+        }
+         if (apiSource === 'realestate') { // Old API
+            if (!formData.has('surroundingSuburbs')) params.set('surroundingSuburbs', 'false');
+            if (!formData.has('furnished')) params.set('furnished', 'false');
+            if (!formData.has('petsAllowed')) params.set('petsAllowed', 'false');
+            if (!formData.has('swimmingPool')) params.set('swimmingPool', 'false');
+            if (!formData.has('garage')) params.set('garage', 'false');
+            if (!formData.has('balcony')) params.set('balcony', 'false');
+            if (!formData.has('outdoorArea')) params.set('outdoorArea', 'false');
+            if (!formData.has('ensuite')) params.set('ensuite', 'false');
+            if (!formData.has('dishwasher')) params.set('dishwasher', 'false');
+            if (!formData.has('study')) params.set('study', 'false');
+            if (!formData.has('builtInRobes')) params.set('builtInRobes', 'false');
+            if (!formData.has('airConditioning')) params.set('airConditioning', 'false');
+            if (!formData.has('heating')) params.set('heating', 'false');
+        }
+        if (apiSource === 'flatmates') {
+            if (!formData.has('billsIncluded')) params.set('billsIncluded', 'false');
+            if (!formData.has('pets')) params.set('pets', 'false');
+            if (!formData.has('smokers')) params.set('smokers', 'false');
+            if (!formData.has('shareHouses')) params.set('shareHouses', 'false');
+            if (!formData.has('wholeProperties')) params.set('wholeProperties', 'false');
+            if (!formData.has('studios')) params.set('studios', 'false');
+            if (!formData.has('grannyFlats')) params.set('grannyFlats', 'false');
+            // 'couples' is usually a value like "couples", not true/false, handle if needed
+        }
+
+
         const queryString = params.toString();
 
         switch (apiSource) {
@@ -376,14 +441,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 url = `${PROXY_BASE_URL}/domain/?${queryString}`;
                 break;
             case 'rentdc':
-                const suburbs = formData.get('suburbs');
+                const suburbs = formData.get('suburbs'); // This specific param for path
                 if (!suburbs) throw new Error("Suburbs are required for Rent.com.au");
-                const rentDcParams = new URLSearchParams(params);
-                rentDcParams.delete('suburbs');
-                url = `${PROXY_BASE_URL}/rentdc/${encodeURIComponent(suburbs)}?${rentDcParams.toString()}`;
+                const rentDcPathParams = new URLSearchParams(params); // Create new for manipulation
+                rentDcPathParams.delete('suburbs'); // Remove from query string
+                url = `${PROXY_BASE_URL}/rentdc/${encodeURIComponent(suburbs)}?${rentDcPathParams.toString()}`;
                 break;
-            case 'realestate':
+            case 'realestate': // Old API
                 url = `${PROXY_BASE_URL}/realestate/?${queryString}`;
+                break;
+            case 'realestategraph': // New GraphQL API
+                url = `${PROXY_BASE_URL}/realestategraph/?${queryString}`;
                 break;
             case 'flatmates':
                 url = `${PROXY_BASE_URL}/flatmates/?${queryString}`;
@@ -394,8 +462,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const response = await fetch(url);
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { message: `HTTP error! status: ${response.status}. Response: ${errorText}` };
+            }
+            throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
         }
         return response.json();
     }
@@ -403,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchAndScrapeDescriptions(listings, apiSource) {
         loadingMessageDiv.textContent = 'Fetching detailed descriptions... (0%)';
         let fetchedCount = 0;
-        const totalToFetch = listings.filter(l => l.url).length;
+        const totalToFetch = listings.filter(l => l.url || l.prettyUrl).length; // Adjusted for REA old
 
         for (let i = 0; i < listings.length; i++) {
             const listing = listings[i];
@@ -414,6 +488,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (apiSource === 'rentdc' && listing.url) {
                 pageUrl = `https://www.rent.com.au${listing.url}`;
             }
+            // No scraping for realestate or realestategraph as descriptions are in API
+            // No scraping for flatmates as descriptions are in API
 
             if (pageUrl) {
                 try {
@@ -422,33 +498,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!response.ok) {
                         console.warn(`Failed to scrape ${pageUrl}: ${response.status}`);
                         listing.scraped_description = 'Error fetching description.';
-                        fetchedCount++; // Still count it as an attempt
+                        fetchedCount++;
                         continue;
                     }
                     const htmlText = await response.text();
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(htmlText, 'text/html');
                     
-                    let descHtmlContent = ''; // Store the relevant HTML content
+                    let descHtmlContent = '';
                     if (apiSource === 'domain') {
-                        // Try to get the content within the expander first
                         const expanderContent = doc.querySelector('div[data-testid="listing-details__description"] .noscript-expander-content');
                         if (expanderContent) {
                             descHtmlContent = expanderContent.innerHTML;
                         } else {
-                            // Fallback if the expander structure isn't found (e.g., for very short descriptions)
                             const mainDescElement = doc.querySelector('div[data-testid="listing-details__description"]');
                             if (mainDescElement) {
-                                // Attempt to remove the "Read more" button part to avoid including it.
-                                const readMoreButtonContainer = mainDescElement.querySelector('.css-ldqj9h'); // Class of the button's div
-                                if (readMoreButtonContainer) {
-                                    readMoreButtonContainer.remove();
-                                }
-                                // Also remove the main H2 "Property Description" title if we just want the body
+                                const readMoreButtonContainer = mainDescElement.querySelector('.css-ldqj9h');
+                                if (readMoreButtonContainer) readMoreButtonContainer.remove();
                                 const mainTitle = mainDescElement.querySelector('h2.css-8shhfl');
-                                if (mainTitle) {
-                                    mainTitle.remove();
-                                }
+                                if (mainTitle) mainTitle.remove();
                                 descHtmlContent = mainDescElement.innerHTML;
                             } else {
                                 descHtmlContent = 'Description element not found on page.';
@@ -456,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } else if (apiSource === 'rentdc') {
                         const descElement = doc.querySelector('p.property-description-content');
-                        descHtmlContent = descElement ? descElement.outerHTML : 'Description element not found on page.'; // Use outerHTML to keep the <p> tag itself
+                        descHtmlContent = descElement ? descElement.outerHTML : 'Description element not found on page.';
                     }
                     listing.scraped_description = descHtmlContent;
 
@@ -475,42 +543,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (err) {
                     console.error(`Error scraping description for ${pageUrl}:`, err);
                     listing.scraped_description = 'Error processing description.';
-                    fetchedCount++; // Count as an attempt even on error
+                    fetchedCount++;
                 }
             } else {
-                // If there's no URL to fetch, it's not an attempt we count for the progress bar
-                // but we should ensure scraped_description is empty or a placeholder
-                listing.scraped_description = listing.scraped_description || ''; // Keep existing if somehow set, else empty
+                listing.scraped_description = listing.scraped_description || '';
             }
-        } // end of for loop
+        }
     }
 
 
     function processAndDisplayListings() {
-        if (allFetchedListings.length === 0 && initialFormData) { // If no listings but form was submitted, maybe trigger fetch
-             // This case might occur if filters are changed before initial search completes or if search yields no results.
-             // Let's not auto-fetch here to avoid loops, user should re-submit form.
-             // However, if allFetchedListings IS populated, then proceed.
+        if (allFetchedListings.length === 0 && initialFormData) {
+            // Do nothing, wait for fetch to complete or show no results from fetch
         } else if (allFetchedListings.length === 0 && !initialFormData) {
             resultsContainer.innerHTML = "<p>Please perform a search first.</p>";
             paginationControls.style.display = 'none';
             return;
         }
 
-
         let currentProcessedListings = [...allFetchedListings];
-
-        // 1. Apply Filters
         const addressFilterTerms = filterAddressInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
         const descriptionFilterTerms = filterDescriptionInput.value.toLowerCase().split(',').map(t => t.trim()).filter(t => t);
 		const selectedTypesToExclude = Array.from(filterPropertyTypeExcludeSelect.selectedOptions).map(option => option.value);
 
         if (addressFilterTerms.length > 0) {
             currentProcessedListings = currentProcessedListings.filter(listing => {
-                const address = (listing.address || '').toLowerCase();
-                return !addressFilterTerms.some(term => address.includes(term));
+                let addressString = '';
+                if (listing.original_api_source === 'realestategraph' && listing.address) {
+                    addressString = `${listing.address.full || ''} ${listing.address.short || ''} ${listing.address.suburb || ''}`.toLowerCase();
+                } else {
+                    addressString = (listing.address || '').toLowerCase();
+                }
+                return !addressFilterTerms.some(term => addressString.includes(term));
             });
         }
+        
 
         if (descriptionFilterTerms.length > 0) {
             currentProcessedListings = currentProcessedListings.filter(listing => {
@@ -523,64 +590,58 @@ document.addEventListener('DOMContentLoaded', () => {
 			currentProcessedListings = currentProcessedListings.filter(listing => {
 				let type = '';
 				switch (listing.original_api_source) {
-					case 'domain':
-						type = listing.features?.propertyTypeFormatted;
-						break;
-					case 'rentdc':
-						type = listing.propType;
-						break;
-					case 'realestate':
-						type = listing.propertyType;
-						break;
+					case 'domain': type = listing.features?.propertyTypeFormatted; break;
+					case 'rentdc': type = listing.propType; break;
+					case 'realestate': type = listing.propertyType; break;
+                    case 'realestategraph': type = listing.propertyType; break;
 					case 'flatmates':
 						if (selectedTypesToExclude.includes('Share House') && listing.rooms?.toLowerCase().includes('share house')) return false;
 						if (selectedTypesToExclude.includes('Studio') && listing.rooms?.toLowerCase().includes('studio')) return false;
 						if (selectedTypesToExclude.includes('Whole Property') && listing.rooms?.toLowerCase().includes('whole property')) return false;
 						if (selectedTypesToExclude.includes('Granny Flat') && listing.rooms?.toLowerCase().includes('granny flat')) return false;
+                        if (selectedTypesToExclude.includes('Homestay') && listing.rooms?.toLowerCase().includes('homestay')) return false;
+                        if (selectedTypesToExclude.includes('Student Accommodation') && listing.rooms?.toLowerCase().includes('student accommodation')) return false;
 						return true; 
 				}
 				return type && typeof type === 'string' ? !selectedTypesToExclude.includes(type.trim()) : true;
 			});
 		}
         
-        // 2. Apply Sorting
         const sortBy = sortResultsSelect.value;
         currentProcessedListings.sort((a, b) => {
             const priceA = parsePrice(a.price);
             const priceB = parsePrice(b.price);
 
             if (priceA === null && priceB === null) return 0;
-            if (priceA === null) return 1; // Nulls (unparseable) go to the end
+            if (priceA === null) return 1;
             if (priceB === null) return -1;
 
-            if (sortBy === 'price-asc') {
-                return priceA - priceB;
-            } else if (sortBy === 'price-desc') {
-                return priceB - priceA;
-            }
+            if (sortBy === 'price-asc') return priceA - priceB;
+            if (sortBy === 'price-desc') return priceB - priceA;
             return 0;
         });
 
-        processedListings = currentProcessedListings; // Update the global processed list
-        clientSideCurrentPage = 1; // Reset to first page for new filter/sort
+        processedListings = currentProcessedListings;
+        clientSideCurrentPage = 1;
         renderClientSidePage();
         setupClientSidePagination();
     }
 
     function parsePrice(priceString) {
         if (!priceString || typeof priceString !== 'string') return null;
+        let cleaned = priceString.toLowerCase()
+            .replace(/pw|per week|\/w|\bweek\b|\bp.w\b/g, '') // More robust week removal
+            .replace(/\bfrom\b/gi, '') // Remove "from"
+            .replace(/\s*\$?\s*contact agent.*|\s*\$?\s*application.*|\s*\$?\s*no price.*|\s*\$?\s*call.*|\s*\$?\s*enquire.*/gi, '') // Remove phrases
+            .replace(/[^0-9.-]/g, '');
         
-        // Remove "pw", "/w", "per week", etc. and any non-numeric/non-decimal characters except '$'
-        let cleaned = priceString.toLowerCase().replace(/pw|per week|\/w/g, '').replace(/[^0-9.-]/g, '');
-        
-        if (cleaned.includes('-')) { // Handle range like "400-500"
-            const parts = cleaned.split('-').map(p => parseFloat(p));
-            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                return (parts[0] + parts[1]) / 2; // Average
+        if (cleaned.includes('-')) {
+            const parts = cleaned.split('-').map(p => parseFloat(p.trim()));
+            if (parts.length >= 1 && !isNaN(parts[0])) { // Take the first number if range or single
+                return parts[0];
             }
             return null;
         }
-        
         const num = parseFloat(cleaned);
         return isNaN(num) ? null : num;
     }
@@ -589,17 +650,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!dateTimeString) return '';
 		try {
 			const date = new Date(dateTimeString);
-			if (isNaN(date.getTime())) return dateTimeString; // Return original if invalid date
+			if (isNaN(date.getTime())) return dateTimeString;
 
-			const options = {
-				weekday: 'short', // e.g., Mon
-				year: 'numeric',   // e.g., 2024
-				month: 'short',    // e.g., Jul
-				day: 'numeric',    // e.g., 23
-				hour: 'numeric',   // e.g., 2 PM
-				minute: '2-digit', // e.g., 05
-				hour12: true       // Use 12-hour clock
-			};
+			const optionsDate = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+			const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
 
 			if (timeOnlyIfSameDayAsFirst && firstDateTimeString) {
 				const firstDate = new Date(firstDateTimeString);
@@ -607,16 +661,13 @@ document.addEventListener('DOMContentLoaded', () => {
 					date.getFullYear() === firstDate.getFullYear() &&
 					date.getMonth() === firstDate.getMonth() &&
 					date.getDate() === firstDate.getDate()) {
-					// Same day, only show time
-					return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+					return date.toLocaleTimeString(undefined, optionsTime);
 				}
 			}
-			
-			// Default: show full date and time
-			return date.toLocaleString(undefined, options); // undefined uses browser's default locale
+			return `${date.toLocaleDateString(undefined, optionsDate)}, ${date.toLocaleTimeString(undefined, optionsTime)}`;
 		} catch (e) {
 			console.error("Error formatting date:", dateTimeString, e);
-			return dateTimeString; // Return original on error
+			return dateTimeString;
 		}
 	}
 
@@ -641,9 +692,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			let baseDescriptionFromApi = '';
 			let scrapedHtmlDescription = listing.scraped_description || '';
 			let inspectionTimesHtml = '';
+            let featuresHtml = '<ul class="listing-features">';
+            let agencyHtml = '';
+            let listersHtml = '';
+            let availableDateHtml = listing.availableDate ? `<p><strong>Available:</strong> ${listing.availableDate}</p>` : '';
+            let bondHtml = listing.bond ? `<p><strong>Bond:</strong> ${listing.bond}</p>` : '';
 
-			// --- Features HTML ---
-			let featuresHtml = '<ul class="listing-features">'; // Start features list
 
 			if (listing.original_api_source === 'domain') {
 				titleAddress = listing.address || 'Address not available';
@@ -653,18 +707,17 @@ document.addEventListener('DOMContentLoaded', () => {
 					(listing.images || []).forEach(img => imagesHtml += `<img src="${img.url || img}" alt="Property image">`);
 				}
 				baseDescriptionFromApi = listing.inspection?.openTime ? `Inspection: ${listing.inspection.openTime} - ${listing.inspection.closeTime}` : (listing.headline || '');
-				
-				// Domain features
 				if (listing.features) {
 					if (listing.features.beds !== undefined) featuresHtml += `<li>Beds: ${listing.features.beds}</li>`;
 					if (listing.features.baths !== undefined) featuresHtml += `<li>Baths: ${listing.features.baths}</li>`;
+                    if (listing.features.parking !== undefined && listing.features.parking?.total > 0) featuresHtml += `<li>Parking: ${listing.features.parking.total}</li>`;
 					if (listing.features.propertyTypeFormatted) featuresHtml += `<li>Type: ${listing.features.propertyTypeFormatted}</li>`;
 				}
 				if (listing.inspection && listing.inspection.openTime) {
 					const openTime = formatDateTimeForDisplay(listing.inspection.openTime);
 					let inspectionText = `<strong>Inspection:</strong> ${openTime}`;
 					if (listing.inspection.closeTime) {
-						const closeTime = formatDateTimeForDisplay(listing.inspection.closeTime, true);
+						const closeTime = formatDateTimeForDisplay(listing.inspection.closeTime, true, listing.inspection.openTime);
 						inspectionText += ` - ${closeTime}`;
 					}
 					inspectionTimesHtml = `<p>${inspectionText}</p>`;
@@ -676,15 +729,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				price = listing.price || 'Price on application';
 				if (listing.imageUrl) { imagesHtml += `<img src="${listing.imageUrl}" alt="Property image">`; }
 				baseDescriptionFromApi = listing.description || ''; 
-
-				// RentDC features
 				if (listing.features && Array.isArray(listing.features) && listing.features.length > 0) {
 					listing.features.forEach(f => featuresHtml += `<li>${f}</li>`);
 				}
 				if(listing.propType) featuresHtml += `<li>Type: ${listing.propType}</li>`;
 
-
-			} else if (listing.original_api_source === 'realestate') {
+			} else if (listing.original_api_source === 'realestate') { // Old API
 				titleAddress = listing.address || 'Address not available';
 				listingUrl = listing.prettyUrl ? `https://www.realestate.com.au${listing.prettyUrl}` : '#';
 				price = listing.price || 'Price on application';
@@ -692,11 +742,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					(listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
 				}
 				baseDescriptionFromApi = listing.description || '';
-				if(listing.bond) baseDescriptionFromApi += `<br><strong>Bond:</strong> ${listing.bond}`;
-				if(listing.dateAvailable) baseDescriptionFromApi += `<br><strong>Available:</strong> ${new Date(listing.dateAvailable).toLocaleDateString()}`;
-				if(listing.nextInspectionTime) baseDescriptionFromApi += `<br><strong>Inspection:</strong> ${new Date(listing.nextInspectionTime.startTime).toLocaleString()} - ${new Date(listing.nextInspectionTime.endTime).toLocaleString()}`;
-				
-				// Realestate.com.au features
+                bondHtml = listing.bond ? `<p><strong>Bond:</strong> ${listing.bond}</p>` : '';
+                availableDateHtml = listing.dateAvailable ? `<p><strong>Available:</strong> ${new Date(listing.dateAvailable).toLocaleDateString()}</p>` : '';
+
 				if (listing.propertyFeatures && Array.isArray(listing.propertyFeatures) && listing.propertyFeatures.length > 0) {
 					listing.propertyFeatures.forEach(f => featuresHtml += `<li>${f}</li>`);
 				}
@@ -706,11 +754,61 @@ document.addEventListener('DOMContentLoaded', () => {
 					const startTime = formatDateTimeForDisplay(listing.nextInspectionTime.startTime);
 					let inspectionText = `<strong>Next Inspection:</strong> ${startTime}`;
 					if (listing.nextInspectionTime.endTime) {
-						const endTime = formatDateTimeForDisplay(listing.nextInspectionTime.endTime, true);
+						const endTime = formatDateTimeForDisplay(listing.nextInspectionTime.endTime, true, listing.nextInspectionTime.startTime);
 						inspectionText += ` - ${endTime}`;
 					}
 					inspectionTimesHtml = `<p>${inspectionText}</p>`;
 				}
+            } else if (listing.original_api_source === 'realestategraph') { // New GraphQL API
+                titleAddress = listing.address?.full || listing.address?.short || 'Address not available';
+                listingUrl = listing.url || '#'; // URL is absolute from proxy
+                price = listing.price || 'Price on application';
+                
+                if (listing.images && listing.images.length > 0) {
+                    listing.images.forEach(imgUrl => imagesHtml += `<img src="${imgUrl.replace('{size}', '640x480')}" alt="Property image">`);
+                } else if (listing.mainImage) {
+                    imagesHtml += `<img src="${listing.mainImage.replace('{size}', '640x480')}" alt="Property image">`;
+                }
+
+                baseDescriptionFromApi = listing.description || ''; // Description is plain text
+                
+                if (listing.bedrooms !== undefined) featuresHtml += `<li>Beds: ${listing.bedrooms}</li>`;
+                if (listing.bathrooms !== undefined) featuresHtml += `<li>Baths: ${listing.bathrooms}</li>`;
+                if (listing.parkingSpaces !== undefined) featuresHtml += `<li>Parking: ${listing.parkingSpaces}</li>`;
+                if (listing.studies !== undefined && listing.studies > 0) featuresHtml += `<li>Studies: ${listing.studies}</li>`;
+                if (listing.propertyType) featuresHtml += `<li>Type: ${listing.propertyType}</li>`;
+                if (listing.productDepth) featuresHtml += `<li>Listing Tier: ${listing.productDepth}</li>`;
+
+
+                if (listing.agencyName) {
+                    agencyHtml = `<div class="agency-info"><strong>Agency:</strong> ${listing.agencyName}`;
+                    if (listing.agencyLogo) {
+                        agencyHtml += `<img src="${listing.agencyLogo.replace('{size}', '100x40')}" alt="${listing.agencyName} logo" class="agency-logo">`;
+                    }
+                    agencyHtml += `</div>`;
+                }
+                if (listing.listers && listing.listers.length > 0) {
+                    listersHtml = '<div class="listers-info"><strong>Listers:</strong><ul>';
+                    listing.listers.forEach(l => {
+                        listersHtml += `<li>${l.name || 'N/A'}${l.phone ? ` (${l.phone})` : ''}</li>`;
+                    });
+                    listersHtml += '</ul></div>';
+                }
+
+                if (listing.inspections && listing.inspections.length > 0) {
+                    inspectionTimesHtml = '<strong>Inspections:</strong><ul>';
+                    listing.inspections.forEach((insp, index) => {
+                        const startTime = formatDateTimeForDisplay(insp.startTime);
+                        let inspectionText = startTime;
+                        if (insp.endTime) {
+                             const endTime = formatDateTimeForDisplay(insp.endTime, true, insp.startTime);
+                             inspectionText += ` - ${endTime}`;
+                        }
+                        inspectionTimesHtml += `<li>${insp.label || inspectionText}</li>`;
+                    });
+                    inspectionTimesHtml += '</ul>';
+                }
+
 
 			} else if (listing.original_api_source === 'flatmates') {
 				titleAddress = listing.address || 'Address not available';
@@ -721,8 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
 					(listing.images || []).forEach(imgUrl => imagesHtml += `<img src="${imgUrl}" alt="Property image">`);
 				}
 				baseDescriptionFromApi = listing.description || '';
-
-				// Flatmates features
 				if (listing.bedrooms !== undefined) featuresHtml += `<li>Beds: ${listing.bedrooms}</li>`;
 				if (listing.bathrooms !== undefined) featuresHtml += `<li>Baths: ${listing.bathrooms}</li>`;
 				if (listing.occupants !== undefined) featuresHtml += `<li>Occupants: ${listing.occupants}</li>`;
@@ -730,60 +826,67 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			
 			imagesHtml += '</div>';
-			featuresHtml += '</ul>'; // End features list
+			featuresHtml += '</ul>';
 
-			// Use scraped HTML description if available, otherwise API's (which might also contain HTML)
 			const displayDescriptionHtml = scrapedHtmlDescription || baseDescriptionFromApi;
-			const descriptionLengthLimit = 300; // You can adjust this
-			let finalDescriptionHtml = displayDescriptionHtml;
+            let finalDescriptionHtml = displayDescriptionHtml;
 
-			// Simple truncation for HTML (could be more sophisticated to avoid breaking tags badly)
-			/*
-			if (displayDescriptionHtml.length > descriptionLengthLimit) {
-				 // Find a space to break nicely, or just cut
-				let breakPoint = displayDescriptionHtml.lastIndexOf(' ', descriptionLengthLimit);
-				if (breakPoint === -1 || breakPoint < descriptionLengthLimit / 2) { // if no space or too early
-					breakPoint = descriptionLengthLimit;
-				}
-				finalDescriptionHtml = displayDescriptionHtml.substring(0, breakPoint) + '...';
-			}
-			*/
+            // For GraphQL, description is plain text. Wrap in <p> if not already HTML.
+            if (listing.original_api_source === 'realestategraph' && displayDescriptionHtml && !displayDescriptionHtml.match(/<[^>]+>/)) {
+                finalDescriptionHtml = `<p>${displayDescriptionHtml.replace(/\n/g, '<br>')}</p>`;
+            }
 
 
 			card.innerHTML = `
 				<h3><a href="${listingUrl}" target="_blank" rel="noopener noreferrer">${titleAddress}</a></h3>
+                ${listing.original_api_source === 'realestategraph' && listing.id ? `<p><small>ID: ${listing.id}</small></p>` : ''}
 				<p><strong>Price:</strong> ${price}</p>
 				<div class="listing-images-container">${imagesHtml}</div>
 				${featuresHtml}
-				${inspectionTimesHtml}
+                ${agencyHtml}
+                ${listersHtml}
+                ${availableDateHtml}
+                ${bondHtml}
+				${inspectionTimesHtml ? `<div class="inspection-times">${inspectionTimesHtml}</div>` : ''}
 				${finalDescriptionHtml ? `<div class="description-html-content">${finalDescriptionHtml}</div>` : '<p>No description available.</p>'}
 			`;
 			resultsContainer.appendChild(card);
+
             const imageElements = card.querySelectorAll('.listing-images-container img');
             const allImageUrlsForThisListing = [];
+
             if (listing.images && Array.isArray(listing.images)) {
                 listing.images.forEach(imgData => {
-                    if (typeof imgData === 'string') {
+                    if (typeof imgData === 'string') { // Flatmates, REA GraphQL (already URL string)
                         allImageUrlsForThisListing.push(imgData);
-                    } else if (imgData && (imgData.url || typeof imgData === 'string')) {
-                        allImageUrlsForThisListing.push(imgData.url || imgData);
-                    } else if (imgData && imgData.server && imgData.uri) {
+                    } else if (imgData && (imgData.url)) { // Domain specific structure
+                        allImageUrlsForThisListing.push(imgData.url);
+                    } else if (imgData && imgData.server && imgData.uri) { // REA Old specific structure
                          allImageUrlsForThisListing.push(imgData.server + imgData.uri);
                     }
                 });
-            } else if (listing.imageUrl && typeof listing.imageUrl === 'string') {
+            } else if (listing.imageUrl && typeof listing.imageUrl === 'string') { // RentDC
                 allImageUrlsForThisListing.push(listing.imageUrl);
+            } else if (listing.mainImage && typeof listing.mainImage === 'string') { // REA GraphQL fallback
+                allImageUrlsForThisListing.push(listing.mainImage);
             }
+
             const validImageUrls = allImageUrlsForThisListing.filter(url => url && typeof url === 'string');
 
-
-            imageElements.forEach((imgElement, index) => {
+            imageElements.forEach((imgElement) => {
                 imgElement.style.cursor = 'pointer';
                 imgElement.addEventListener('click', (e) => {
                     e.preventDefault();
                     const clickedSrc = imgElement.getAttribute('src');
-                    let clickedImageIndex = validImageUrls.findIndex(url => url === clickedSrc);
-                    if (clickedImageIndex === -1) clickedImageIndex = 0;
+                    // For templated URLs, we need to find the base part if {size} is present
+                    const clickedSrcBase = clickedSrc.includes('{size}') ? clickedSrc.split('{size}')[0] : clickedSrc;
+
+                    let clickedImageIndex = validImageUrls.findIndex(url => {
+                        const urlBase = url.includes('{size}') ? url.split('{size}')[0] : url;
+                        return urlBase === clickedSrcBase;
+                    });
+
+                    if (clickedImageIndex === -1) clickedImageIndex = 0; // Fallback
 
                     if (validImageUrls.length > 0) {
                         openLightbox(validImageUrls, clickedImageIndex);
@@ -816,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clientSideCurrentPage > 1) {
             clientSideCurrentPage--;
             renderClientSidePage();
-            setupClientSidePagination(); // Update button states and page info
+            setupClientSidePagination();
         }
     });
 
@@ -825,7 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clientSideCurrentPage < totalClientPages) {
             clientSideCurrentPage++;
             renderClientSidePage();
-            setupClientSidePagination(); // Update button states and page info
+            setupClientSidePagination();
         }
     });
     
@@ -836,4 +939,10 @@ document.addEventListener('DOMContentLoaded', () => {
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
     }
+
+    // Initialize the first active tab (Domain.com.au)
+    // No automatic form submission on load, user needs to click search.
+    // If you want to auto-submit for the default tab, you could call:
+    // document.getElementById('domain-form').dispatchEvent(new Event('submit'));
+    // after DOMContentLoaded. For now, it waits for user interaction.
 });
