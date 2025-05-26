@@ -576,6 +576,110 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
   }
 }));
 
+app.get('/rltest', async (req, res) => {
+    const headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/109.0",
+        "Accept": "application/graphql+json, application/json",
+        "Content-Type": "application/json",
+        "Referer": "https://www.realestate.com.au/",
+    };
+
+    const endpoint = "https://lexa.realestate.com.au/graphql";
+    
+    // IMPORTANT: The template for the 'query' variable's value.
+    // Page number will be inserted as an integer.
+    const graphQueryObjectTemplate = {
+      "channel":"buy",
+      "page": 1, // Placeholder, will be replaced
+      "pageSize":25,
+      "filters":{
+          "surroundingSuburbs":true,
+          "excludeNoSalePrice":false,
+          "ex-under-contract":false,
+          "ex-deposit-taken":false,
+          "excludeAuctions":false,
+          "excludePrivateSales":false,
+          "furnished":false,
+          "petsAllowed":false,
+          "hasScheduledAuction":false
+      },
+      "localities":[
+          {"searchLocation":"sydney cbd, nsw"}
+      ]
+    };
+
+    const allListingUrls = [];
+    console.log("Starting /rltest fetch requests...");
+
+    try {
+        for (let page = 1; page <= 2; page++) { // Loop for 2 pages as in the userscript
+            console.log(`Fetching page ${page} for /rltest...`);
+            
+            const currentQueryObject = { ...graphQueryObjectTemplate, page: page };
+            
+            const graphJsonPayload = {
+              "operationName": "searchByQuery",
+              "variables": {
+                "query": JSON.stringify(currentQueryObject), // Stringify the query object
+                "testListings": false,
+                "nullifyOptionals": false 
+              },
+              "extensions": {
+                "persistedQuery": {
+                  "version": 1,
+                  "sha256Hash": "85827545576eeee7a1c63949dfb515c1dea0eb03fd77d269292e6525cdcfeee0"
+                }
+              }
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(graphJsonPayload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`HTTP error! Status: ${response.status} for page ${page} in /rltest. Body: ${errorText}`);
+                // Continue to next page or decide to fail fast
+                // For this test, we'll try to get whatever we can
+                continue; 
+            }
+
+            const responseData = await response.json();
+
+            if (responseData && responseData.data && responseData.data.buySearch &&
+                responseData.data.buySearch.results && responseData.data.buySearch.results.exact &&
+                responseData.data.buySearch.results.exact.items) {
+
+                const listings = responseData.data.buySearch.results.exact.items;
+                console.log(`Listings found on page ${page} for /rltest: ${listings.length}`);
+                for (const item of listings) {
+                    if (item && item.listing && item.listing._links && item.listing._links.canonical && item.listing._links.canonical.href) {
+                        allListingUrls.push(item.listing._links.canonical.href);
+                    } else {
+                        console.warn("Item structure unexpected in /rltest:", item);
+                    }
+                }
+            } else if (responseData.errors) {
+                console.warn(`GraphQL errors on page ${page} for /rltest. Response:`, JSON.stringify(responseData.errors));
+            } 
+            else {
+                console.warn(`Data path not found in response for page ${page} for /rltest. Response:`, responseData);
+            }
+        }
+        console.log("Finished all fetch requests for /rltest.");
+        res.json(allListingUrls);
+
+    } catch (error) {
+        console.error("Error in /rltest route:", error);
+        res.status(500).json({ 
+            error: "Failed to fetch data from realestate.com.au GraphQL endpoint", 
+            details: error.message 
+        });
+    }
+});
+
 app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
   proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
     proxyReqOpts.method = 'POST';
@@ -592,19 +696,18 @@ app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
       filters: {
         "excludeNoSalePrice": false,
         "ex-under-contract": false,
-        "ex-deposit-taken": true, // As per request.txt
+        "ex-deposit-taken": true,
         "excludeAuctions": false,
         "excludeNoDisplayPrice": false,
         "excludePrivateSales": false,
         "hasScheduledAuction": false,
-        // Default to true if not specified or invalid
         surroundingSuburbs: srcReq.query.surroundingSuburbs ? srcReq.query.surroundingSuburbs === 'true' : true, 
         furnished: srcReq.query.furnished === 'true',
         petsAllowed: srcReq.query.petsAllowed === 'true',
       },
       localities: [],
-      testListings: false, // As per request.txt for inner query
-      recentHides: []      // As per request.txt for inner query
+      testListings: false,
+      recentHides: []
     };
 
     if (srcReq.query.propertyTypes) {
@@ -615,7 +718,7 @@ app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
           return trimmedPt;
         });
     } else {
-      queryObject.filters.propertyTypes = ["house", "townhouse", "unit apartment", "villa"]; // Default from request.txt
+      queryObject.filters.propertyTypes = ["house", "townhouse", "unit apartment", "villa"];
     }
 
     if (srcReq.query.minPrice || srcReq.query.maxPrice) {
@@ -631,7 +734,7 @@ app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
     }
     
     if (srcReq.query.minBathrooms) queryObject.filters.minimumBathroom = String(srcReq.query.minBathrooms);
-    if (srcReq.query.minParkingSpaces) queryObject.filters.minimumCars = String(srcReq.query.minParkingSpaces); // Corrected to minParkingSpaces
+    if (srcReq.query.minParkingSpaces) queryObject.filters.minimumCars = String(srcReq.query.minParkingSpaces);
     
     if (srcReq.query.availableDateMax) queryObject.filters.availableDateRange = { maximum: srcReq.query.availableDateMax };
 
@@ -643,17 +746,14 @@ app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
       queryObject.localities = srcReq.query.locations.split(';')
         .map(loc => ({ searchLocation: loc.trim() }));
     } else {
-        // API requires localities. If not provided, it's an issue.
-        // For now, this will result in an empty localities array.
-        // Client should ensure locations are provided.
     }
 
     const graphJsonPayload = {
       operationName: "searchByQuery",
       variables: {
         query: JSON.stringify(queryObject),
-        testListings: false, // Outer variable as per request.txt
-        recentHides: []      // Outer variable as per request.txt
+        testListings: false,
+        recentHides: []
       },
       extensions: {
         persistedQuery: {
@@ -664,12 +764,12 @@ app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
     };
     
     proxyReqOpts.body = JSON.stringify(graphJsonPayload);
-    delete proxyReqOpts.query; // remove query params from proxied request
+    delete proxyReqOpts.query;
     return proxyReqOpts;
   },
   userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
     userRes.set("Access-Control-Allow-Origin","*");
-    userRes.set("Access-Control-Allow-Methods","*"); // Typically GET, POST for GraphQL
+    userRes.set("Access-Control-Allow-Methods","*");
     userRes.set("Access-Control-Allow-Headers","*");
     userRes.set("Access-Control-Allow-Credentials","true");
 
@@ -679,7 +779,6 @@ app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
       
       if (originalData.errors) {
         console.error("GraphQL API returned errors:", JSON.stringify(originalData.errors));
-        // Return the errors to the client
         return JSON.stringify({ errors: originalData.errors });
       }
 
