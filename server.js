@@ -3,9 +3,6 @@ const proxy = require('express-http-proxy');
 const cheerio = require('cheerio');
 const {URLSearchParams} = require('url');
 const cors = require("cors");
-const axios = require('axios');
-const { SocksProxyAgent } = require('socks-proxy-agent');
-const https = require('https');
 
 function extractUrlParameters(urlString) {
   const parsedUrl = new URLSearchParams(urlString);
@@ -345,92 +342,89 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/rentdc', async (req, res) => {
-  // Set CORS headers for the response to your client
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "GET, OPTIONS"); // Adjust if you use other methods
-  res.set("Access-Control-Allow-Headers", "Content-Type, Accept"); // Adjust as needed
-  res.set("Access-Control-Allow-Credentials", "true");
+app.use('/rentdc', proxy('https://www.rent.com.au/properties', {
+  proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+    proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
+    proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
+    proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
+    proxyReqOpts.headers["Cookie"] = "";
+    proxyReqOpts.headers["Referer"] = "https://www.rent.com.au/";
+	proxyReqOpts.headers['Alt-Used'] = 'www.rent.com.au';
 
-  // Handle OPTIONS pre-flight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
+    return proxyReqOpts;
+  },
+  userResDecorator: function(proxyRes, proxyResData, req, res) {
+    res.set("Access-Control-Allow-Origin","*");
+    res.set("Access-Control-Allow-Methods","*");
+    res.set("Access-Control-Allow-Headers","*");
+    res.set("Access-Control-Allow-Credentials","true");
 
-  const targetBaseUrl = 'http://www.rent.com.au/properties';
-  // req.url will be the path and query string after /rentdc
-  // e.g., if client calls /rentdc/werrington-nsw-2747?bedrooms=1
-  // req.url will be /werrington-nsw-2747?bedrooms=1
-  const requestPathAndQuery = req.url;
-  const targetUrl = targetBaseUrl + requestPathAndQuery;
-
-  const socksProxy = 'socks5://142.54.237.34:4145'; // Your SOCKS5 proxy
-  const agent = new SocksProxyAgent(socksProxy);
-
-  const headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Referer": "http://www.rent.com.au/", // Adding a referer can sometimes help
-    "DNT": "1", // Do Not Track
-    "Upgrade-Insecure-Requests": "1",
-    // "Connection": "keep-alive", // Axios handles this with its agent
-  };
-
-  try {
-    console.log(`Attempting to fetch from rent.com.au via SOCKS5: ${targetUrl}`);
-    const httpsAgentWithNoStrictSSL = new https.Agent({
-      rejectUnauthorized: false 
-    });
-    const combinedAgent = new SocksProxyAgent(socksProxy, { agent: httpsAgentWithNoStrictSSL });
-    const response = await axios.get(targetUrl, {
-      httpAgent: agent,
-      // httpsAgent: agent,
-      httpsAgent: combinedAgent,
-      headers: headers,
-      timeout: 30000,
-    });
-
-    if (response.status === 200 && response.headers['content-type'] && response.headers['content-type'].includes('text/html')) {
+    if (proxyRes.statusCode === 200 && proxyRes.headers['content-type'] && proxyRes.headers['content-type'].includes('text/html')) {
       res.set("content-type", "application/json; charset=utf-8");
-      let returnJSON = extractListingDetails(response.data.toString('utf8'));
-
+      let returnJSON = extractListingDetails(proxyResData.toString('utf8'));
       if (typeof imgParam !== 'undefined' && imgParam === 0) {
-        if (returnJSON.listings) {
-          returnJSON.listings = returnJSON.listings.map(obj => {
-            delete obj.imageUrl;
-            return obj;
-          });
-        }
+          if (returnJSON.listings) {
+              returnJSON.listings = returnJSON.listings.map(obj => {
+                  delete obj.imageUrl;
+                  return obj;
+              });
+          }
       }
-      res.status(200).send(JSON.stringify(returnJSON));
+
+      return JSON.stringify(returnJSON);
     } else {
-      console.error(`rent.com.au responded with status: ${response.status}, content-type: ${response.headers['content-type']}`);
-      // Forward the status and content from rent.com.au if it's not what we expect
-      if (response.headers['content-type']) {
-        res.set('Content-Type', response.headers['content-type']);
+      if (proxyRes.headers['content-type']) {
+        res.set('Content-Type', proxyRes.headers['content-type']);
       }
-      res.status(response.status).send(response.data);
+      res.status(proxyRes.statusCode);
+      return proxyResData;
     }
-  } catch (error) {
-    console.error('Error fetching from rent.com.au via SOCKS5:', error.message);
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Error Data:', error.response.data);
-      console.error('Error Status:', error.response.status);
-      console.error('Error Headers:', error.response.headers);
-      res.status(error.response.status).set(error.response.headers).send(error.response.data);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('Error Request:', error.request);
-      res.status(504).send('No response received from rent.com.au (via proxy). Gateway Timeout.');
+  },
+  proxyErrorHandler: function(err, backendRes, next) {
+    console.error('Proxy error connecting to rent.com.au:', err);
+    if (!backendRes.headersSent) {
+        backendRes.status(502).send('Proxy error: Could not connect to the target service.');
     } else {
-      // Something happened in setting up the request that triggered an Error
-      res.status(500).send('Error setting up request to rent.com.au (via proxy).');
+        if (!backendRes.writableEnded) {
+            backendRes.end();
+        }
     }
   }
-});
+}));
+
+app.use('/test-rentdc-basic', proxy('https://www.rent.com.au', {
+  proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+    proxyReqOpts.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0";
+    proxyReqOpts.headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+    proxyReqOpts.headers["Accept-Language"] = "en-US,en;q=0.5";
+    proxyReqOpts.headers["Accept-Encoding"] = "gzip, deflate, br, zstd";
+    proxyReqOpts.headers["Alt-Used"] = "www.rent.com.au";
+    proxyReqOpts.headers["cache-control"] = "no-cache";
+    proxyReqOpts.headers["pragma"] = "no-cache";
+    proxyReqOpts.headers["sec-fetch-dest"] = "document";
+    proxyReqOpts.headers["sec-fetch-mode"] = "navigate";
+    proxyReqOpts.headers["sec-fetch-site"] = "none";
+    proxyReqOpts.headers["sec-fetch-user"] = "?1";
+    proxyReqOpts.headers["upgrade-insecure-requests"] = "1";
+    proxyReqOpts.headers["Connection"] = "keep-alive";
+    return proxyReqOpts;
+  },
+  userResDecorator: function(proxyRes, proxyResData, req, res) {
+    res.status(proxyRes.statusCode);
+
+    return proxyResData;
+  },
+  proxyErrorHandler: function(err, backendRes, next) {
+    console.error('Proxy error connecting to rent.com.au (basic test):', err);
+    if (!backendRes.headersSent) {
+        backendRes.status(502).send('Proxy error (basic test): Could not connect to the target service.');
+    } else {
+        if (!backendRes.writableEnded) {
+            backendRes.end();
+        }
+    }
+  }
+}));
 
 app.use('/scrape-html', proxy(
   (req) => {
@@ -578,6 +572,203 @@ app.use('/domain', proxy('https://www.domain.com.au/rent', {
     }
     else{
        return proxyResData;
+    }
+  }
+}));
+
+app.use('/realestategraph', proxy('https://lexa.realestate.com.au/graphql', {
+  proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
+    proxyReqOpts.method = 'POST';
+    proxyReqOpts.headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/109.0';
+    proxyReqOpts.headers['Accept'] = 'application/graphql+json, application/json';
+    proxyReqOpts.headers['Content-Type'] = 'application/json';
+    proxyReqOpts.headers['Referer'] = 'https://www.realestate.com.au/';
+
+    const queryObject = {
+      channel: "rent",
+      page: parseInt(srcReq.query.page) || 1,
+      pageSize: parseInt(srcReq.query.pageSize) || 25,
+      sortType: srcReq.query.sortType || "price-asc",
+      filters: {
+        "excludeNoSalePrice": false,
+        "ex-under-contract": false,
+        "ex-deposit-taken": true, // As per request.txt
+        "excludeAuctions": false,
+        "excludeNoDisplayPrice": false,
+        "excludePrivateSales": false,
+        "hasScheduledAuction": false,
+        // Default to true if not specified or invalid
+        surroundingSuburbs: srcReq.query.surroundingSuburbs ? srcReq.query.surroundingSuburbs === 'true' : true, 
+        furnished: srcReq.query.furnished === 'true',
+        petsAllowed: srcReq.query.petsAllowed === 'true',
+      },
+      localities: [],
+      testListings: false, // As per request.txt for inner query
+      recentHides: []      // As per request.txt for inner query
+    };
+
+    if (srcReq.query.propertyTypes) {
+      queryObject.filters.propertyTypes = srcReq.query.propertyTypes.split(',')
+        .map(pt => {
+          const trimmedPt = pt.trim().toLowerCase();
+          if (trimmedPt === 'unit' || trimmedPt === 'apartment') return 'unit apartment';
+          return trimmedPt;
+        });
+    } else {
+      queryObject.filters.propertyTypes = ["house", "townhouse", "unit apartment", "villa"]; // Default from request.txt
+    }
+
+    if (srcReq.query.minPrice || srcReq.query.maxPrice) {
+      queryObject.filters.priceRange = {};
+      if (srcReq.query.minPrice) queryObject.filters.priceRange.minimum = String(srcReq.query.minPrice);
+      if (srcReq.query.maxPrice) queryObject.filters.priceRange.maximum = String(srcReq.query.maxPrice);
+    }
+
+    if (srcReq.query.minBedrooms || srcReq.query.maxBedrooms) {
+      queryObject.filters.bedroomsRange = {};
+      if (srcReq.query.minBedrooms) queryObject.filters.bedroomsRange.minimum = String(srcReq.query.minBedrooms);
+      if (srcReq.query.maxBedrooms) queryObject.filters.bedroomsRange.maximum = String(srcReq.query.maxBedrooms);
+    }
+    
+    if (srcReq.query.minBathrooms) queryObject.filters.minimumBathroom = String(srcReq.query.minBathrooms);
+    if (srcReq.query.minParkingSpaces) queryObject.filters.minimumCars = String(srcReq.query.minParkingSpaces); // Corrected to minParkingSpaces
+    
+    if (srcReq.query.availableDateMax) queryObject.filters.availableDateRange = { maximum: srcReq.query.availableDateMax };
+
+    if (srcReq.query.keywords) {
+      queryObject.filters.keywords = { terms: srcReq.query.keywords.split(',').map(k => k.trim()) };
+    }
+    
+    if (srcReq.query.locations) {
+      queryObject.localities = srcReq.query.locations.split(';')
+        .map(loc => ({ searchLocation: loc.trim() }));
+    } else {
+        // API requires localities. If not provided, it's an issue.
+        // For now, this will result in an empty localities array.
+        // Client should ensure locations are provided.
+    }
+
+    const graphJsonPayload = {
+      operationName: "searchByQuery",
+      variables: {
+        query: JSON.stringify(queryObject),
+        testListings: false, // Outer variable as per request.txt
+        recentHides: []      // Outer variable as per request.txt
+      },
+      extensions: {
+        persistedQuery: {
+          version: 1,
+          sha256Hash: "85827545576eeee7a1c63949dfb515c1dea0eb03fd77d269292e6525cdcfeee0"
+        }
+      }
+    };
+    
+    proxyReqOpts.body = JSON.stringify(graphJsonPayload);
+    delete proxyReqOpts.query; // remove query params from proxied request
+    return proxyReqOpts;
+  },
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    userRes.set("Access-Control-Allow-Origin","*");
+    userRes.set("Access-Control-Allow-Methods","*"); // Typically GET, POST for GraphQL
+    userRes.set("Access-Control-Allow-Headers","*");
+    userRes.set("Access-Control-Allow-Credentials","true");
+
+    if (proxyRes.statusCode === 200) {
+      userRes.set("content-type", "application/json; charset=utf-8");
+      const originalData = JSON.parse(proxyResData.toString('utf8'));
+      
+      if (originalData.errors) {
+        console.error("GraphQL API returned errors:", JSON.stringify(originalData.errors));
+        // Return the errors to the client
+        return JSON.stringify({ errors: originalData.errors });
+      }
+
+      if (!originalData.data || !originalData.data.rentSearch || !originalData.data.rentSearch.results) {
+        console.warn("Unexpected response structure from GraphQL API:", originalData);
+        return JSON.stringify({ error: "Unexpected response structure from upstream API.", data: originalData });
+      }
+
+      const results = originalData.data.rentSearch.results;
+      const pagination = results.pagination || {};
+      
+      let allListings = [];
+      if (results.exact && Array.isArray(results.exact.items)) {
+        allListings = allListings.concat(results.exact.items);
+      }
+      if (results.surrounding && Array.isArray(results.surrounding.items)) {
+        allListings = allListings.concat(results.surrounding.items);
+      }
+
+      const transformedListings = allListings.map(item => {
+        const listing = item.listing || {};
+        let limitedImages = [];
+        if (imgParam > 0 && listing.media && Array.isArray(listing.media.images)) {
+            limitedImages = listing.media.images.slice(0, imgParam).map(img => img.templatedUrl);
+        }
+
+        return {
+          id: listing.id,
+          url: listing._links?.canonical?.href,
+          price: listing.price?.display,
+          address: listing.address ? {
+            full: listing.address.display?.fullAddress,
+            short: listing.address.display?.shortAddress,
+            suburb: listing.address.suburb,
+            postcode: listing.address.postcode,
+            state: listing.address.state,
+          } : undefined,
+          bedrooms: listing.generalFeatures?.bedrooms?.value,
+          bathrooms: listing.generalFeatures?.bathrooms?.value,
+          parkingSpaces: listing.generalFeatures?.parkingSpaces?.value,
+          studies: listing.generalFeatures?.studies?.value,
+          propertyType: listing.propertyType?.display,
+          propertyTypeId: listing.propertyType?.id,
+          description: (descParam > 0 && listing.description) ? listing.description.slice(0, descParam) : ((listing.description && descParam !==0) ? listing.description : undefined),
+          mainImage: (imgParam > 0 && listing.media?.mainImage?.templatedUrl) ? listing.media.mainImage.templatedUrl : undefined,
+          images: (imgParam > 0) ? limitedImages : undefined,
+          agencyName: listing.listingCompany?.name,
+          agencyId: listing.listingCompany?.id,
+          agencyLogo: listing.listingCompany?.media?.logo?.templatedUrl,
+          listers: listing.listers?.map(l => ({
+              name: l.name,
+              phone: l.phoneNumber?.display,
+              photo: l.photo?.templatedUrl
+          })),
+          availableDate: listing.availableDate?.display,
+          bond: listing.bond?.display,
+          inspections: listing.inspections?.map(insp => ({
+            startTime: insp.startTime,
+            endTime: insp.endTime,
+            label: insp.display?.longLabel || insp.display?.shortLabel
+          })),
+          productDepth: listing.productDepth
+        };
+      });
+
+      const responseJson = {
+        totalListings: results.totalResultsCount || 0,
+        currentPage: pagination.page || 1,
+        pageSize: parseInt(userReq.query.pageSize) || 25, // Echo back requested pageSize
+        totalPages: pagination.maxPageNumberAvailable || 0,
+        listings: transformedListings
+      };
+      return JSON.stringify(responseJson);
+    } else {
+      if (proxyRes.headers['content-type']) {
+        userRes.set('Content-Type', proxyRes.headers['content-type']);
+      }
+      userRes.status(proxyRes.statusCode);
+      return proxyResData;
+    }
+  },
+  proxyErrorHandler: function(err, backendRes, next) {
+    console.error('Proxy error connecting to GraphQL realestate.com.au:', err);
+    if (!backendRes.headersSent) {
+        backendRes.status(502).send('Proxy error: Could not connect to the target GraphQL service.');
+    } else {
+        if (!backendRes.writableEnded) {
+            backendRes.end();
+        }
     }
   }
 }));
